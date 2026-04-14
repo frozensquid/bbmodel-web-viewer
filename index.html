@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBModel Viewer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #111; color: #e0e0e0; overflow: hidden; height: 100vh; }
+#viewer { position: absolute; inset: 0; }
+canvas { display: block; }
+
+#toolbar {
+  position: absolute; top: 0; left: 0; right: 0; height: 48px;
+  background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(12px);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 10;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#toolbar .logo { font-weight: 700; font-size: 15px; color: #7c8aff; letter-spacing: -0.3px; }
+#toolbar .sep { width: 1px; height: 24px; background: rgba(255,255,255,0.1); }
+#model-name { font-size: 13px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06); color: #ccc; font-size: 12px; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.spacer { flex: 1; }
+
+#dropzone {
+  position: absolute; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #111; transition: opacity 0.4s;
+}
+#dropzone.hidden { opacity: 0; pointer-events: none; }
+#dropzone .drop-area {
+  width: 420px; max-width: 90vw; padding: 60px 40px;
+  border: 2px dashed rgba(124,138,255,0.35); border-radius: 16px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  background: rgba(124,138,255,0.03);
+}
+#dropzone .drop-area:hover, #dropzone.drag-over .drop-area {
+  border-color: #7c8aff; background: rgba(124,138,255,0.08);
+}
+#dropzone .drop-area h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #ddd; }
+#dropzone .drop-area p { font-size: 13px; color: #888; }
+#dropzone .drop-area .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+
+#loading {
+  position: absolute; inset: 0; z-index: 200;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+}
+#loading.active { display: flex; }
+.spinner { width: 36px; height: 36px; border: 3px solid rgba(124,138,255,0.2); border-top-color: #7c8aff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#info {
+  position: absolute; bottom: 16px; left: 16px; z-index: 10;
+  font-size: 11px; color: #555; line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div id="viewer"></div>
+
+<div id="toolbar">
+  <span class="logo">BBModel Viewer</span>
+  <span class="sep"></span>
+  <span id="model-name">Aucun modele</span>
+  <span class="spacer"></span>
+  <label class="btn" id="btn-open">Ouvrir .bbmodel<input type="file" accept=".bbmodel" hidden></label>
+</div>
+
+<div id="dropzone">
+  <div class="drop-area" id="drop-area">
+    <div class="icon">&#128230;</div>
+    <h2>Glisse un .bbmodel ici</h2>
+    <p>ou clique pour parcourir</p>
+  </div>
+</div>
+
+<div id="loading"><div class="spinner"></div></div>
+
+<div id="info"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── Blockbench face definitions (from three_custom.js setShape) ───
+const FACE_ORDER = ['east', 'west', 'up', 'down', 'south', 'north'];
+
+// 4 vertices per face, using from (f) and to (t) arrays
+const FACE_VERTS = {
+  east:  (f,t) => [[t[0],t[1],t[2]], [t[0],t[1],f[2]], [t[0],f[1],t[2]], [t[0],f[1],f[2]]],
+  west:  (f,t) => [[f[0],t[1],f[2]], [f[0],t[1],t[2]], [f[0],f[1],f[2]], [f[0],f[1],t[2]]],
+  up:    (f,t) => [[f[0],t[1],f[2]], [t[0],t[1],f[2]], [f[0],t[1],t[2]], [t[0],t[1],t[2]]],
+  down:  (f,t) => [[f[0],f[1],t[2]], [t[0],f[1],t[2]], [f[0],f[1],f[2]], [t[0],f[1],f[2]]],
+  south: (f,t) => [[f[0],t[1],t[2]], [t[0],t[1],t[2]], [f[0],f[1],t[2]], [t[0],f[1],t[2]]],
+  north: (f,t) => [[t[0],t[1],f[2]], [f[0],t[1],f[2]], [t[0],f[1],f[2]], [f[0],f[1],f[2]]],
+};
+
+const FACE_NORMALS = {
+  east: [1,0,0], west: [-1,0,0], up: [0,1,0], down: [0,-1,0], south: [0,0,1], north: [0,0,-1],
+};
+
+// ─── Math ───
+const deg2rad = d => d * Math.PI / 180;
+
+function rotateXYZ([x, y, z], [rx, ry, rz]) {
+  let cx, sx;
+  cx = Math.cos(deg2rad(rx)); sx = Math.sin(deg2rad(rx));
+  [y, z] = [y*cx - z*sx, y*sx + z*cx];
+  cx = Math.cos(deg2rad(ry)); sx = Math.sin(deg2rad(ry));
+  [x, z] = [x*cx + z*sx, -x*sx + z*cx];
+  cx = Math.cos(deg2rad(rz)); sx = Math.sin(deg2rad(rz));
+  [x, y] = [x*cx - y*sx, x*sx + y*cx];
+  return [x, y, z];
+}
+
+function rotateUVSlots(slots, rotation) {
+  const arr = slots.map(s => [...s]);
+  let rot = ((Math.round(rotation || 0) % 360) + 360) % 360;
+  while (rot > 0) {
+    const a = arr[0]; arr[0] = arr[2]; arr[2] = arr[3]; arr[3] = arr[1]; arr[1] = a;
+    rot -= 90;
+  }
+  return arr;
+}
+
+function cubeIsExportable(cube) {
+  if (cube.export === false || cube.visibility === false) return false;
+  if (typeof cube.name === 'string' && /hitbox|collision|_hb\b/i.test(cube.name)) return false;
+  return true;
+}
+
+// ─── Build geometry for one cube (in group-local space) ───
+function buildCubeGeometry(cube, groupOrigin, imgW, imgH, scale) {
+  const from = cube.from || [0,0,0];
+  const to = cube.to || [0,0,0];
+  const cubeOrigin = cube.origin || groupOrigin;
+  const cubeRot = cube.rotation || [0,0,0];
+  const hasRot = cubeRot[0] !== 0 || cubeRot[1] !== 0 || cubeRot[2] !== 0;
+  const faces = cube.faces || {};
+
+  const positions = [], normals = [], uvs = [], indices = [];
+  let vc = 0;
+
+  for (const fname of FACE_ORDER) {
+    const face = faces[fname];
+    if (!face || face.texture === null || face.texture === undefined) continue;
+    const uvr = face.uv;
+    if (!Array.isArray(uvr) || uvr.length !== 4) continue;
+
+    const verts = FACE_VERTS[fname](from, to);
+    // Three.js UV: flipY=true → V=0 bottom, V=1 top → v = 1 - pixel/h
+    const [u0, v0, u1, v1] = uvr;
+    let slots = [
+      [u0/imgW, 1 - v0/imgH], [u1/imgW, 1 - v0/imgH],
+      [u0/imgW, 1 - v1/imgH], [u1/imgW, 1 - v1/imgH],
+    ];
+    slots = rotateUVSlots(slots, face.rotation);
+
+    let [nx, ny, nz] = FACE_NORMALS[fname];
+    if (hasRot) [nx, ny, nz] = rotateXYZ([nx, ny, nz], cubeRot);
+
+    for (let i = 0; i < 4; i++) {
+      let [px, py, pz] = verts[i];
+      let lx = px - cubeOrigin[0], ly = py - cubeOrigin[1], lz = pz - cubeOrigin[2];
+      if (hasRot) [lx, ly, lz] = rotateXYZ([lx, ly, lz], cubeRot);
+      positions.push(
+        (cubeOrigin[0] + lx - groupOrigin[0]) * scale,
+        (cubeOrigin[1] + ly - groupOrigin[1]) * scale,
+        (cubeOrigin[2] + lz - groupOrigin[2]) * scale
+      );
+      normals.push(nx, ny, nz);
+      uvs.push(slots[i][0], slots[i][1]);
+    }
+    indices.push(vc, vc+2, vc+1, vc+2, vc+3, vc+1);
+    vc += 4;
+  }
+  return { positions, normals, uvs, indices };
+}
+
+// ─── BBModel → Three.js scene ───
+function loadTexture(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const tex = new THREE.Texture(img);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      resolve({ texture: tex, width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+function collectGroups(outliner) {
+  const result = [];
+  function walk(node, parentUuid) {
+    if (typeof node !== 'object' || node === null || Array.isArray(node)) return;
+    result.push({ group: node, parentUuid });
+    const uuid = node.uuid || parentUuid;
+    for (const child of (node.children || [])) {
+      if (typeof child === 'object' && child !== null && !Array.isArray(child)) walk(child, uuid);
+    }
+  }
+  for (const item of outliner) {
+    if (typeof item === 'object' && item !== null && !Array.isArray(item)) walk(item, null);
+  }
+  return result;
+}
+
+function directCubeUuids(group) {
+  return (group.children || []).filter(c => typeof c === 'string');
+}
+
+function groupHasExportableCubes(group, elemMap) {
+  for (const uuid of directCubeUuids(group)) {
+    const el = elemMap[uuid];
+    if (el && el.type === 'cube' && cubeIsExportable(el)) return true;
+  }
+  for (const child of (group.children || [])) {
+    if (typeof child === 'object' && child !== null && groupHasExportableCubes(child, elemMap)) return true;
+  }
+  return false;
+}
+
+async function bbmodelToScene(data) {
+  const scale = 1 / 16;
+  const root = new THREE.Group();
+  root.name = data.name || 'bbmodel';
+
+  // Texture
+  let texData = null;
+  const textures = data.textures || [];
+  if (textures.length > 0 && textures[0].source) {
+    texData = await loadTexture(textures[0].source);
+  }
+  const imgW = texData ? texData.width : (data.resolution?.width || 16);
+  const imgH = texData ? texData.height : (data.resolution?.height || 16);
+
+  const material = new THREE.MeshStandardMaterial({
+    map: texData?.texture || null,
+    side: THREE.DoubleSide,
+    metalness: 0, roughness: 1,
+    transparent: true, alphaTest: 0.5,
+  });
+
+  // Element map
+  const elemMap = {};
+  for (const el of (data.elements || [])) {
+    if (el && el.uuid) elemMap[el.uuid] = el;
+  }
+
+  const groups = collectGroups(data.outliner || []);
+  const nodeMap = {};
+  const originMap = {};
+
+  for (const { group, parentUuid } of groups) {
+    if (!groupHasExportableCubes(group, elemMap)) continue;
+    const uuid = group.uuid;
+    const origin = group.origin || [0,0,0];
+    const parentOrigin = originMap[parentUuid] || [0,0,0];
+
+    const obj = new THREE.Group();
+    obj.name = group.name || 'group';
+    obj.position.set(
+      (origin[0] - parentOrigin[0]) * scale,
+      (origin[1] - parentOrigin[1]) * scale,
+      (origin[2] - parentOrigin[2]) * scale
+    );
+    const rot = group.rotation || [0,0,0];
+    if (rot[0] || rot[1] || rot[2]) {
+      obj.rotation.order = 'ZYX';
+      obj.rotation.set(deg2rad(rot[0]), deg2rad(rot[1]), deg2rad(rot[2]));
+    }
+
+    // Build merged geometry for all cubes
+    const allPos = [], allNrm = [], allUvs = [], allIdx = [];
+    let offset = 0;
+    for (const cubeUuid of directCubeUuids(group)) {
+      const cube = elemMap[cubeUuid];
+      if (!cube || cube.type !== 'cube' || !cubeIsExportable(cube)) continue;
+      const g = buildCubeGeometry(cube, origin, imgW, imgH, scale);
+      if (!g.positions.length) continue;
+      allPos.push(...g.positions);
+      allNrm.push(...g.normals);
+      allUvs.push(...g.uvs);
+      for (const idx of g.indices) allIdx.push(idx + offset);
+      offset += g.positions.length / 3;
+    }
+
+    if (allPos.length > 0) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(allPos, 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(allNrm, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(allUvs, 2));
+      geo.setIndex(allIdx);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.name = (group.name || 'group') + '_mesh';
+      obj.add(mesh);
+    }
+
+    nodeMap[uuid] = obj;
+    originMap[uuid] = origin;
+  }
+
+  // Parent-child hierarchy
+  for (const { group, parentUuid } of groups) {
+    const uuid = group.uuid;
+    if (!nodeMap[uuid]) continue;
+    if (parentUuid && nodeMap[parentUuid]) {
+      nodeMap[parentUuid].add(nodeMap[uuid]);
+    } else {
+      root.add(nodeMap[uuid]);
+    }
+  }
+
+  return root;
+}
+
+// ─── Three.js Viewer ───
+const container = document.getElementById('viewer');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x1a1a2e);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 100);
+camera.position.set(2, 1.8, 3);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0.5, 0);
+controls.update();
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(3, 5, 4);
+scene.add(dirLight);
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+dirLight2.position.set(-3, 2, -4);
+scene.add(dirLight2);
+
+// Grid
+const grid = new THREE.GridHelper(10, 20, 0x333355, 0x222244);
+grid.position.y = -0.001;
+scene.add(grid);
+
+let currentModel = null;
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── Frame camera on model ───
+function frameModel(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
+  if (box.isEmpty()) return;
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const dist = maxDim * 2.2;
+  controls.target.copy(center);
+  camera.position.set(center.x + dist * 0.7, center.y + dist * 0.5, center.z + dist * 0.7);
+  controls.update();
+}
+
+// ─── Load bbmodel ───
+async function handleFile(file) {
+  if (!file || !file.name.endsWith('.bbmodel')) return;
+
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('dropzone').classList.add('hidden');
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (currentModel) { scene.remove(currentModel); currentModel = null; }
+
+    const model = await bbmodelToScene(data);
+    scene.add(model);
+    currentModel = model;
+    frameModel(model);
+
+    document.getElementById('model-name').textContent = data.name || file.name.replace('.bbmodel', '');
+
+    const box = new THREE.Box3().setFromObject(model);
+    const s = box.getSize(new THREE.Vector3());
+    const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
+    document.getElementById('info').textContent =
+      `${elCount} cubes | ${s.x.toFixed(2)} x ${s.y.toFixed(2)} x ${s.z.toFixed(2)}`;
+  } catch (err) {
+    console.error(err);
+    alert('Erreur lors du chargement: ' + err.message);
+    document.getElementById('dropzone').classList.remove('hidden');
+  } finally {
+    document.getElementById('loading').classList.remove('active');
+  }
+}
+
+// ─── UI: drag & drop + file input ───
+const dropzone = document.getElementById('dropzone');
+const dropArea = document.getElementById('drop-area');
+
+dropArea.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.bbmodel';
+  input.onchange = () => { if (input.files[0]) handleFile(input.files[0]); };
+  input.click();
+});
+
+document.getElementById('btn-open').querySelector('input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';
+});
+
+document.body.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+document.body.addEventListener('dragleave', e => { if (e.target === document.body || e.target === dropzone) dropzone.classList.remove('drag-over'); });
+document.body.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const file = e.dataTransfer?.files[0];
+  if (file) handleFile(file);
+});
+</script>
+</body>
+</html>
