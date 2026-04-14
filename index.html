@@ -11,9 +11,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 canvas { display: block; }
 
 #toolbar {
-  position: absolute; top: 0; left: 0; right: 0; height: 48px;
+  position: absolute; top: 0; left: 0; right: 0; min-height: 48px;
   background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(12px);
-  display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 10;
+  display: flex; align-items: center; flex-wrap: wrap; padding: 8px 16px; gap: 10px; z-index: 10;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 #toolbar .logo { font-weight: 700; font-size: 15px; color: #7c8aff; letter-spacing: -0.3px; }
@@ -25,6 +25,19 @@ canvas { display: block; }
   transition: all 0.15s;
 }
 .btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.btn.active {
+  background: rgba(124,138,255,0.25);
+  border-color: rgba(124,138,255,0.5);
+  color: #c8d0ff;
+}
+.toolbar-ctrl {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: #888;
+}
+.toolbar-ctrl input[type="range"] {
+  width: 72px; accent-color: #7c8aff;
+  cursor: pointer;
+}
 .spacer { flex: 1; }
 
 #dropzone {
@@ -56,9 +69,67 @@ canvas { display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 #info {
-  position: absolute; bottom: 16px; left: 16px; z-index: 10;
+  position: absolute; bottom: 56px; left: 16px; z-index: 10;
   font-size: 11px; color: #555; line-height: 1.5;
 }
+
+#gif-modal {
+  position: fixed; inset: 0; z-index: 300;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+}
+#gif-modal.open { display: flex; }
+#gif-modal .panel {
+  width: 360px; max-width: 92vw; padding: 22px 22px 18px;
+  background: #1c1c28; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+#gif-modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: #e8e8f0; }
+#gif-modal .row { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#gif-modal .row label { font-size: 12px; color: #9a9ab0; flex: 1; }
+#gif-modal .row input[type="number"], #gif-modal .row select {
+  width: 100px; padding: 6px 8px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12); background: #12121a; color: #ddd; font-size: 12px;
+}
+#gif-modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+#gif-modal .hint { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.45; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+#loading-inner { text-align: center; }
+#loading-msg { margin-top: 14px; font-size: 13px; color: #aaa; }
+
+#bg-color {
+  width: 32px; height: 26px; padding: 2px; border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px; cursor: pointer; background: #222; flex-shrink: 0;
+}
+.bg-presets { display: flex; gap: 4px; align-items: center; }
+.bg-preset {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.35); cursor: pointer; padding: 0; flex-shrink: 0;
+}
+.bg-preset:hover { transform: scale(1.08); }
+.ctrl-label { color: #888; font-size: 11px; white-space: nowrap; }
+
+#anim-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(20,20,30,0.88); backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 16px; display: none; gap: 12px; align-items: center;
+}
+#anim-bar.visible { display: flex; }
+#anim-bar select {
+  padding: 5px 8px; border-radius: 6px; background: #12121a; color: #ddd;
+  border: 1px solid rgba(255,255,255,0.12); font-size: 12px; max-width: 180px; cursor: pointer;
+}
+#anim-bar .anim-play {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06); color: #ddd; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+#anim-bar .anim-play:hover { background: rgba(255,255,255,0.12); }
+#anim-bar .anim-time {
+  flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 100px;
+}
+#anim-bar .anim-label { font-size: 11px; color: #888; white-space: nowrap; min-width: 56px; text-align: right; }
 </style>
 </head>
 <body>
@@ -69,8 +140,53 @@ canvas { display: block; }
   <span class="logo">BBModel Viewer</span>
   <span class="sep"></span>
   <span id="model-name">Aucun modele</span>
+  <span class="sep"></span>
+  <div class="toolbar-ctrl" title="Apparence de la vue 3D">
+    <span class="ctrl-label">Fond</span>
+    <input type="color" id="bg-color" value="#1a1a2e" aria-label="Couleur du fond">
+    <div class="bg-presets">
+      <button type="button" class="bg-preset" data-color="#1a1a2e" title="Bleu nuit" style="background:#1a1a2e"></button>
+      <button type="button" class="bg-preset" data-color="#0b0b10" title="Noir" style="background:#0b0b10"></button>
+      <button type="button" class="bg-preset" data-color="#2d2520" title="Brun" style="background:#2d2520"></button>
+      <button type="button" class="bg-preset" data-color="#1a2e1a" title="Vert sombre" style="background:#1a2e1a"></button>
+      <button type="button" class="bg-preset" data-color="#1e2a3a" title="Bleu ardoise" style="background:#1e2a3a"></button>
+      <button type="button" class="bg-preset" data-color="#e8e4dc" title="Clair" style="background:#e8e4dc"></button>
+    </div>
+    <button type="button" class="btn active" id="btn-grid" title="Afficher ou masquer la grille au sol">Grille</button>
+  </div>
   <span class="spacer"></span>
+  <div class="toolbar-ctrl" id="turntable-wrap" title="Rotation automatique autour du modele">
+    <button type="button" class="btn" id="btn-turntable">Turntable</button>
+    <label for="turntable-speed">Vitesse</label>
+    <input type="range" id="turntable-speed" min="0.5" max="6" step="0.25" value="2.5">
+  </div>
+  <span class="sep"></span>
+  <button type="button" class="btn" id="btn-gif" disabled title="Exporter un GIF turntable (360°)">GIF</button>
+  <span class="sep"></span>
   <label class="btn" id="btn-open">Ouvrir .bbmodel<input type="file" accept=".bbmodel" hidden></label>
+</div>
+
+<div id="gif-modal" aria-hidden="true">
+  <div class="panel">
+    <h3>Exporter un GIF turntable</h3>
+    <div class="row">
+      <label for="gif-frames">Images (tour complet)</label>
+      <input type="number" id="gif-frames" min="12" max="120" value="48" step="1">
+    </div>
+    <div class="row">
+      <label for="gif-delay">Pause entre images (ms)</label>
+      <input type="number" id="gif-delay" min="20" max="250" value="60" step="5">
+    </div>
+    <div class="row">
+      <label for="gif-width">Largeur max (px)</label>
+      <input type="number" id="gif-width" min="240" max="800" value="480" step="20">
+    </div>
+    <p class="hint">Une rotation caméra exacte sur 360° autour du modèle (boucle sans saut). Nécessite une connexion pour charger l’encodeur GIF.</p>
+    <div class="actions">
+      <button type="button" class="btn" id="gif-cancel">Annuler</button>
+      <button type="button" class="btn" id="gif-export-run" style="background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #e0e4ff;">Exporter</button>
+    </div>
+  </div>
 </div>
 
 <div id="dropzone">
@@ -81,9 +197,21 @@ canvas { display: block; }
   </div>
 </div>
 
-<div id="loading"><div class="spinner"></div></div>
+<div id="loading">
+  <div id="loading-inner">
+    <div class="spinner"></div>
+    <p id="loading-msg"></p>
+  </div>
+</div>
 
 <div id="info"></div>
+
+<div id="anim-bar">
+  <select id="anim-select" title="Choisir une animation"></select>
+  <button type="button" class="anim-play" id="anim-play" title="Lecture / Pause">&#9654;</button>
+  <input type="range" class="anim-time" id="anim-time" min="0" max="1000" value="0" step="1">
+  <span class="anim-label" id="anim-label">0.00 / 0.00</span>
+</div>
 
 <script type="importmap">
 {
@@ -273,13 +401,13 @@ async function bbmodelToScene(data) {
   const originMap = {};
 
   for (const { group, parentUuid } of groups) {
-    if (!groupHasExportableCubes(group, elemMap)) continue;
     const uuid = group.uuid;
     const origin = group.origin || [0,0,0];
     const parentOrigin = originMap[parentUuid] || [0,0,0];
 
     const obj = new THREE.Group();
     obj.name = group.name || 'group';
+    obj.rotation.order = 'ZYX';
     obj.position.set(
       (origin[0] - parentOrigin[0]) * scale,
       (origin[1] - parentOrigin[1]) * scale,
@@ -287,11 +415,9 @@ async function bbmodelToScene(data) {
     );
     const rot = group.rotation || [0,0,0];
     if (rot[0] || rot[1] || rot[2]) {
-      obj.rotation.order = 'ZYX';
       obj.rotation.set(deg2rad(rot[0]), deg2rad(rot[1]), deg2rad(rot[2]));
     }
 
-    // Build merged geometry for all cubes
     const allPos = [], allNrm = [], allUvs = [], allIdx = [];
     let offset = 0;
     for (const cubeUuid of directCubeUuids(group)) {
@@ -332,8 +458,252 @@ async function bbmodelToScene(data) {
     }
   }
 
+  root.userData.nodeMap = nodeMap;
   return root;
 }
+
+// ─── Animation engine ───
+
+function parseNum(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseAnimations(data) {
+  const rawAnims = data.animations || [];
+  return rawAnims.map(a => {
+    const tracks = {};
+    for (const [uuid, animator] of Object.entries(a.animators || {})) {
+      if (animator.type !== 'bone') continue;
+      const channels = {};
+      for (const kf of (animator.keyframes || [])) {
+        const ch = kf.channel;
+        if (!channels[ch]) channels[ch] = [];
+        const dp = (kf.data_points && kf.data_points[0]) || {};
+        channels[ch].push({
+          time: parseFloat(kf.time) || 0,
+          value: [parseNum(dp.x), parseNum(dp.y), parseNum(dp.z)],
+          interpolation: kf.interpolation || 'linear',
+        });
+      }
+      for (const ch in channels) {
+        channels[ch].sort((a, b) => a.time - b.time);
+      }
+      tracks[uuid] = { name: animator.name, channels };
+    }
+    return {
+      name: a.name || 'animation',
+      length: parseFloat(a.length) || 1,
+      loop: a.loop || 'once',
+      tracks,
+    };
+  });
+}
+
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * (
+    (2 * p1) +
+    (-p0 + p2) * t +
+    (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+    (-p0 + 3 * p1 - 3 * p2 + p3) * t3
+  );
+}
+
+function sampleChannel(keyframes, time, interp) {
+  if (!keyframes || keyframes.length === 0) return null;
+  if (keyframes.length === 1) return keyframes[0].value.slice();
+
+  let i1 = 0;
+  for (let i = 0; i < keyframes.length; i++) {
+    if (keyframes[i].time <= time) i1 = i;
+  }
+  let i2 = i1 + 1;
+  if (i2 >= keyframes.length) {
+    return keyframes[keyframes.length - 1].value.slice();
+  }
+
+  const kf1 = keyframes[i1], kf2 = keyframes[i2];
+  const dt = kf2.time - kf1.time;
+  const t = dt > 0 ? Math.max(0, Math.min(1, (time - kf1.time) / dt)) : 0;
+
+  const mode = interp || kf1.interpolation || 'linear';
+  if (mode === 'catmullrom') {
+    const i0 = Math.max(0, i1 - 1);
+    const i3 = Math.min(keyframes.length - 1, i2 + 1);
+    return [
+      catmullRom(keyframes[i0].value[0], kf1.value[0], kf2.value[0], keyframes[i3].value[0], t),
+      catmullRom(keyframes[i0].value[1], kf1.value[1], kf2.value[1], keyframes[i3].value[1], t),
+      catmullRom(keyframes[i0].value[2], kf1.value[2], kf2.value[2], keyframes[i3].value[2], t),
+    ];
+  }
+  // linear
+  return [
+    kf1.value[0] + (kf2.value[0] - kf1.value[0]) * t,
+    kf1.value[1] + (kf2.value[1] - kf1.value[1]) * t,
+    kf1.value[2] + (kf2.value[2] - kf1.value[2]) * t,
+  ];
+}
+
+function applyAnimation(anim, time, nodeMap, baseTransforms) {
+  for (const [uuid, track] of Object.entries(anim.tracks)) {
+    const obj = nodeMap[uuid];
+    if (!obj) continue;
+    const base = baseTransforms[uuid];
+    if (!base) continue;
+
+    const rot = sampleChannel(track.channels.rotation, time);
+    if (rot) {
+      obj.rotation.set(
+        base.rotation[0] + deg2rad(rot[0]),
+        base.rotation[1] + deg2rad(rot[1]),
+        base.rotation[2] + deg2rad(rot[2]),
+      );
+    }
+    const pos = sampleChannel(track.channels.position, time);
+    if (pos) {
+      const s = 1 / 16;
+      obj.position.set(
+        base.position[0] + pos[0] * s,
+        base.position[1] + pos[1] * s,
+        base.position[2] + pos[2] * s,
+      );
+    }
+    const scl = sampleChannel(track.channels.scale, time);
+    if (scl) {
+      obj.scale.set(scl[0], scl[1], scl[2]);
+    }
+  }
+}
+
+function resetToBase(nodeMap, baseTransforms) {
+  for (const [uuid, base] of Object.entries(baseTransforms)) {
+    const obj = nodeMap[uuid];
+    if (!obj) continue;
+    obj.position.set(...base.position);
+    obj.rotation.set(...base.rotation);
+    obj.scale.set(...base.scale);
+  }
+}
+
+function captureBaseTransforms(nodeMap) {
+  const out = {};
+  for (const [uuid, obj] of Object.entries(nodeMap)) {
+    out[uuid] = {
+      position: [obj.position.x, obj.position.y, obj.position.z],
+      rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+      scale: [obj.scale.x, obj.scale.y, obj.scale.z],
+    };
+  }
+  return out;
+}
+
+let animList = [];
+let activeAnim = null;
+let animPlaying = false;
+let animTime = 0;
+let baseTransforms = {};
+let animNodeMap = {};
+let lastFrameTime = 0;
+
+const animSelect = document.getElementById('anim-select');
+const animPlayBtn = document.getElementById('anim-play');
+const animTimeSlider = document.getElementById('anim-time');
+const animLabel = document.getElementById('anim-label');
+const animBar = document.getElementById('anim-bar');
+
+function setupAnimations(data, nodeMap) {
+  animNodeMap = nodeMap;
+  baseTransforms = captureBaseTransforms(nodeMap);
+  animList = parseAnimations(data);
+
+  animSelect.innerHTML = '';
+  if (animList.length === 0) {
+    animBar.classList.remove('visible');
+    activeAnim = null;
+    animPlaying = false;
+    return;
+  }
+
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '-1';
+  noneOpt.textContent = '-- aucune --';
+  animSelect.appendChild(noneOpt);
+
+  animList.forEach((a, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = a.name + (a.loop === 'loop' ? ' \u21BB' : '');
+    animSelect.appendChild(opt);
+  });
+
+  animBar.classList.add('visible');
+  selectAnimation(-1);
+}
+
+function selectAnimation(idx) {
+  if (idx < 0 || idx >= animList.length) {
+    activeAnim = null;
+    animPlaying = false;
+    animTime = 0;
+    resetToBase(animNodeMap, baseTransforms);
+    updateAnimUI();
+    return;
+  }
+  activeAnim = animList[idx];
+  animTime = 0;
+  animPlaying = true;
+  lastFrameTime = performance.now();
+  updateAnimUI();
+}
+
+function updateAnimUI() {
+  const len = activeAnim ? activeAnim.length : 0;
+  animTimeSlider.max = String(Math.round(len * 1000));
+  animTimeSlider.value = String(Math.round(animTime * 1000));
+  const cur = animTime.toFixed(2);
+  const total = len.toFixed(2);
+  animLabel.textContent = `${cur} / ${total}`;
+  animPlayBtn.textContent = animPlaying ? '\u275A\u275A' : '\u25B6';
+}
+
+function tickAnimation() {
+  if (!activeAnim || !animPlaying) return;
+  const now = performance.now();
+  const dt = (now - lastFrameTime) / 1000;
+  lastFrameTime = now;
+  animTime += dt;
+  if (animTime >= activeAnim.length) {
+    if (activeAnim.loop === 'loop') {
+      animTime = animTime % activeAnim.length;
+    } else {
+      animTime = activeAnim.length;
+      animPlaying = false;
+    }
+  }
+  applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
+  updateAnimUI();
+}
+
+animSelect.addEventListener('change', () => {
+  selectAnimation(parseInt(animSelect.value, 10));
+});
+
+animPlayBtn.addEventListener('click', () => {
+  if (!activeAnim) return;
+  if (!animPlaying && animTime >= activeAnim.length) animTime = 0;
+  animPlaying = !animPlaying;
+  if (animPlaying) lastFrameTime = performance.now();
+  updateAnimUI();
+});
+
+animTimeSlider.addEventListener('input', () => {
+  if (!activeAnim) return;
+  animTime = parseInt(animTimeSlider.value, 10) / 1000;
+  animPlaying = false;
+  applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
+  updateAnimUI();
+});
 
 // ─── Three.js Viewer ───
 const container = document.getElementById('viewer');
@@ -345,6 +715,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 100);
 camera.position.set(2, 1.8, 3);
 
@@ -352,7 +723,31 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.target.set(0, 0.5, 0);
+controls.autoRotate = false;
+controls.autoRotateSpeed = 2.5;
 controls.update();
+
+const btnTurntable = document.getElementById('btn-turntable');
+const speedInput = document.getElementById('turntable-speed');
+const turntableWrap = document.getElementById('turntable-wrap');
+
+function setTurntable(on) {
+  controls.autoRotate = on;
+  if (btnTurntable) btnTurntable.classList.toggle('active', on);
+}
+
+if (btnTurntable) {
+  btnTurntable.addEventListener('click', () => setTurntable(!controls.autoRotate));
+}
+if (speedInput) {
+  speedInput.addEventListener('input', () => {
+    controls.autoRotateSpeed = parseFloat(speedInput.value);
+  });
+}
+
+controls.addEventListener('start', () => {
+  if (controls.autoRotate) setTurntable(false);
+});
 
 // Lights
 scene.add(new THREE.AmbientLight(0xffffff, 0.7));
@@ -368,10 +763,189 @@ const grid = new THREE.GridHelper(10, 20, 0x333355, 0x222244);
 grid.position.y = -0.001;
 scene.add(grid);
 
+const BG_STORAGE_KEY = 'bbviewer-bg';
+const GRID_STORAGE_KEY = 'bbviewer-grid';
+const bgColorInput = document.getElementById('bg-color');
+const btnGrid = document.getElementById('btn-grid');
+
+function applyViewerBackground(hex) {
+  const h = (hex && hex.startsWith('#')) ? hex : '#' + String(hex || '1a1a2e').replace(/^#/, '');
+  if (!/^#[0-9a-fA-F]{6}$/.test(h)) return;
+  const n = parseInt(h.slice(1), 16);
+  scene.background = new THREE.Color(n);
+  renderer.setClearColor(n);
+  if (bgColorInput) bgColorInput.value = h.toLowerCase();
+  try { localStorage.setItem(BG_STORAGE_KEY, h.toLowerCase()); } catch (_) {}
+}
+
+function setGridVisible(on) {
+  grid.visible = on;
+  if (btnGrid) btnGrid.classList.toggle('active', on);
+  try { localStorage.setItem(GRID_STORAGE_KEY, on ? '1' : '0'); } catch (_) {}
+}
+
+function loadViewerPrefs() {
+  try {
+    const bg = localStorage.getItem(BG_STORAGE_KEY);
+    if (bg && /^#[0-9a-fA-F]{6}$/.test(bg)) applyViewerBackground(bg);
+    if (localStorage.getItem(GRID_STORAGE_KEY) === '0') setGridVisible(false);
+  } catch (_) {}
+}
+
+if (bgColorInput) {
+  bgColorInput.addEventListener('input', () => applyViewerBackground(bgColorInput.value));
+}
+document.querySelectorAll('.bg-preset').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const c = btn.getAttribute('data-color');
+    if (c) applyViewerBackground(c);
+  });
+});
+if (btnGrid) {
+  btnGrid.addEventListener('click', () => setGridVisible(!grid.visible));
+}
+
+loadViewerPrefs();
+
 let currentModel = null;
+
+const loadingEl = document.getElementById('loading');
+const loadingMsg = document.getElementById('loading-msg');
+const gifModal = document.getElementById('gif-modal');
+const btnGif = document.getElementById('btn-gif');
+
+async function exportTurntableGif() {
+  if (!currentModel) return;
+
+  let numFrames = parseInt(document.getElementById('gif-frames').value, 10);
+  let delayMs = parseInt(document.getElementById('gif-delay').value, 10);
+  let maxW = parseInt(document.getElementById('gif-width').value, 10);
+  numFrames = Math.max(12, Math.min(120, numFrames));
+  delayMs = Math.max(20, Math.min(250, delayMs));
+  maxW = Math.max(240, Math.min(800, maxW));
+
+  gifModal.classList.remove('open');
+  gifModal.setAttribute('aria-hidden', 'true');
+  loadingEl.classList.add('active');
+  loadingMsg.textContent = 'Chargement de l’encodeur GIF…';
+
+  const prevTarget = controls.target.clone();
+  const prevPos = camera.position.clone();
+  const prevSize = new THREE.Vector2();
+  renderer.getSize(prevSize);
+
+  const snap = document.createElement('canvas');
+  const snapCtx = snap.getContext('2d', { willReadFrequently: true });
+
+  setTurntable(false);
+  controls.enabled = false;
+
+  try {
+    const { GIFEncoder, quantize, applyPalette } = await import(
+      'https://unpkg.com/gifenc@1.0.3/dist/gifenc.esm.js'
+    );
+
+    const aspect = prevSize.x / prevSize.y;
+    const expW = Math.min(maxW, prevSize.x);
+    const expH = Math.round(expW / aspect);
+
+    renderer.setSize(expW, expH, true);
+    camera.aspect = expW / expH;
+    camera.updateProjectionMatrix();
+
+    const offset = new THREE.Vector3().subVectors(prevPos, prevTarget);
+    const sph = new THREE.Spherical().setFromVector3(offset);
+    const startTheta = sph.theta;
+
+    const gif = GIFEncoder();
+
+    const gifAnimWasPlaying = animPlaying;
+    const gifAnimStartTime = animTime;
+
+    for (let i = 0; i < numFrames; i++) {
+      loadingMsg.textContent = `Capture ${i + 1} / ${numFrames}`;
+
+      if (activeAnim && gifAnimWasPlaying) {
+        const frameDt = (delayMs / 1000);
+        const t = gifAnimStartTime + frameDt * i;
+        const at = activeAnim.loop === 'loop' ? (t % activeAnim.length) : Math.min(t, activeAnim.length);
+        applyAnimation(activeAnim, at, animNodeMap, baseTransforms);
+      }
+
+      sph.theta = startTheta + (Math.PI * 2 * i) / numFrames;
+      camera.position.setFromSpherical(sph).add(prevTarget);
+      camera.lookAt(prevTarget);
+      controls.update();
+      renderer.render(scene, camera);
+
+      const bufW = renderer.domElement.width;
+      const bufH = renderer.domElement.height;
+      snap.width = bufW;
+      snap.height = bufH;
+      snapCtx.drawImage(renderer.domElement, 0, 0);
+
+      const imageData = snapCtx.getImageData(0, 0, bufW, bufH);
+      const palette = quantize(imageData.data, 256, { format: 'rgb565' });
+      const index = applyPalette(imageData.data, palette, 'rgb565');
+
+      const frameOpts = { palette, delay: delayMs };
+      if (i === 0) frameOpts.repeat = 0;
+      gif.writeFrame(index, bufW, bufH, frameOpts);
+    }
+
+    gif.finish();
+    const out = gif.bytes();
+    const safeName = document.getElementById('model-name').textContent.replace(/[^\w\-]+/g, '_') || 'model';
+    const blob = new Blob([out], { type: 'image/gif' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${safeName}_turntable.gif`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    console.error(err);
+    alert('Export GIF impossible : ' + (err.message || err));
+  } finally {
+    renderer.setSize(prevSize.x, prevSize.y, true);
+    camera.aspect = prevSize.x / prevSize.y;
+    camera.updateProjectionMatrix();
+    camera.position.copy(prevPos);
+    controls.target.copy(prevTarget);
+    controls.enabled = true;
+    controls.update();
+    renderer.render(scene, camera);
+    loadingMsg.textContent = '';
+    loadingEl.classList.remove('active');
+  }
+}
+
+if (btnGif) {
+  btnGif.addEventListener('click', () => {
+    if (!currentModel || btnGif.disabled) return;
+    gifModal.classList.add('open');
+    gifModal.setAttribute('aria-hidden', 'false');
+  });
+}
+
+document.getElementById('gif-cancel').addEventListener('click', () => {
+  gifModal.classList.remove('open');
+  gifModal.setAttribute('aria-hidden', 'true');
+});
+
+document.getElementById('gif-export-run').addEventListener('click', () => {
+  exportTurntableGif();
+});
+
+gifModal.addEventListener('click', (e) => {
+  if (e.target === gifModal) {
+    gifModal.classList.remove('open');
+    gifModal.setAttribute('aria-hidden', 'true');
+  }
+});
 
 function animate() {
   requestAnimationFrame(animate);
+  tickAnimation();
   controls.update();
   renderer.render(scene, camera);
 }
@@ -398,9 +972,11 @@ function frameModel(obj) {
 
 // ─── Load bbmodel ───
 async function handleFile(file) {
-  if (!file || !file.name.endsWith('.bbmodel')) return;
+  const name = (file && file.name) ? file.name.toLowerCase() : '';
+  if (!file || !name.endsWith('.bbmodel')) return;
 
-  document.getElementById('loading').classList.add('active');
+  loadingEl.classList.add('active');
+  loadingMsg.textContent = '';
   document.getElementById('dropzone').classList.add('hidden');
 
   try {
@@ -412,21 +988,36 @@ async function handleFile(file) {
     const model = await bbmodelToScene(data);
     scene.add(model);
     currentModel = model;
-    frameModel(model);
 
-    document.getElementById('model-name').textContent = data.name || file.name.replace('.bbmodel', '');
+    const gifBtn = document.getElementById('btn-gif');
+    if (gifBtn) gifBtn.disabled = false;
+
+    setupAnimations(data, model.userData.nodeMap || {});
+
+    frameModel(model);
+    setTurntable(true);
+
+    const nameEl = document.getElementById('model-name');
+    if (nameEl) nameEl.textContent = data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, '');
 
     const box = new THREE.Box3().setFromObject(model);
     const s = box.getSize(new THREE.Vector3());
     const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
-    document.getElementById('info').textContent =
-      `${elCount} cubes | ${s.x.toFixed(2)} x ${s.y.toFixed(2)} x ${s.z.toFixed(2)}`;
+    const infoEl = document.getElementById('info');
+    if (infoEl) {
+      infoEl.textContent = `${elCount} cubes | ${s.x.toFixed(2)} x ${s.y.toFixed(2)} x ${s.z.toFixed(2)}`;
+    }
   } catch (err) {
     console.error(err);
     alert('Erreur lors du chargement: ' + err.message);
     document.getElementById('dropzone').classList.remove('hidden');
+    if (!currentModel) {
+      const gifBtn = document.getElementById('btn-gif');
+      if (gifBtn) gifBtn.disabled = true;
+    }
   } finally {
-    document.getElementById('loading').classList.remove('active');
+    loadingEl.classList.remove('active');
+    loadingMsg.textContent = '';
   }
 }
 
