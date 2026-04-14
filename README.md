@@ -24,7 +24,7 @@ pip install pygltflib
 
 ### Conversion minimale
 
-Le fichier de sortie prend par défaut le même nom que l’entrée, avec l’extension `.glb` :
+Le fichier de sortie prend par défaut le même nom que l'entrée, avec l'extension `.glb` :
 
 ```bash
 python bbmodel_to_gltf.py chemin/vers/modele.bbmodel
@@ -56,9 +56,9 @@ Le script charge la texture dans cet ordre de priorité :
 
 1. Fichier image à côté du `.bbmodel` (même nom que dans `textures[0]`, ou `.png` / `.jpg` dérivé du nom)
 2. Champ `source` en `data:image/...;base64,...` dans le JSON
-3. Chemins `relative_path` ou `path` s’ils pointent vers un fichier existant
+3. Chemins `relative_path` ou `path` s'ils pointent vers un fichier existant
 
-La **première entrée** du tableau `textures` du `.bbmodel` est utilisée pour tout le mesh (modèles multi-textures : une seule image est embarquée pour l’instant).
+La **première entrée** du tableau `textures` du `.bbmodel` est utilisée pour tout le mesh (modèles multi-textures : une seule image est embarquée pour l'instant).
 
 ### Comportement du GLB produit
 
@@ -66,24 +66,29 @@ La **première entrée** du tableau `textures` du `.bbmodel` est utilisée pour 
 - Transparence des textures : matériau en mode **MASK** avec `alphaCutoff` pour éviter les zones transparentes affichées en gris
 - Hitboxes / cubes masqués : heuristique sur le nom (`hitbox`, `collision`, `_hb`) et champs `export` / `visibility`
 
-## Utiliser l’interface web (`index.html`)
+## Utiliser l'interface web (`index.html`)
 
-Aucun serveur n’est obligatoire : ouvrez le fichier dans un navigateur récent (Chrome, Edge, Firefox).
+Aucun serveur n'est obligatoire : ouvrez le fichier dans un navigateur récent (Chrome, Edge, Firefox).
 
 1. Double-cliquez sur `index.html` ou faites **Fichier → Ouvrir** dans le navigateur.
 2. Glissez un fichier `.bbmodel` sur la zone, ou utilisez **Ouvrir .bbmodel**.
-3. Le modèle s’affiche en 3D (orbite : clic pour tourner, molette pour zoomer).
+3. Le modèle s'affiche en 3D (orbite : clic pour tourner, molette pour zoomer).
+4. **Turntable** : après chargement, une rotation automatique autour du modèle est activée. Utilisez le bouton *Turntable* pour l'arrêter ou la relancer, le curseur *Vitesse* pour régler la vitesse. Dès que vous commencez à faire tourner la vue à la souris, le turntable se coupe (évite le conflit avec l'orbite).
+5. **GIF** : bouton *GIF* → réglages (nombre d'images pour un tour complet, délai entre images en ms, largeur max). L'export fait un **tour caméra exact de 360°** (boucle sans saut), puis télécharge un fichier `*_turntable.gif`. L'encodeur [gifenc](https://github.com/mattdesl/gifenc) est chargé depuis un CDN au moment de l'export (connexion Internet requise pour cette étape).
+6. **Fond** : sélecteur de couleur + pastilles de préréglages pour la couleur du ciel 3D. **Grille** : affiche ou masque la grille au sol (état et couleur de fond sont mémorisés dans le navigateur via `localStorage`).
+7. **Animations** : si le `.bbmodel` contient des animations, une barre apparait en bas de l'écran avec un sélecteur, lecture/pause, timeline et affichage du temps. Channels supportés : **rotation**, **position**, **scale** (bones). Interpolations **linéaire** et **Catmull-Rom**. L'export GIF capture aussi l'animation en cours.
 
 La page charge **Three.js** et les contrôles depuis un CDN (connexion Internet requise au premier chargement). Elle lit le JSON du `.bbmodel` et la texture embarquée en base64 comme le script Python.
 
 ### Limitations du viewer web
 
 - Même logique de texture que le script : **première texture** du projet pour tout le mesh.
-- Pas d’export GLB depuis la page (visualisation uniquement).
+- Pas d'export GLB depuis la page (visualisation uniquement).
+- Animations : seuls les bones sont animés (pas les effets de particules ni les commandes).
 
 ## Visualiser un GLB ailleurs
 
-Une fois le fichier généré par Python, vous pouvez l’ouvrir avec :
+Une fois le fichier généré par Python, vous pouvez l'ouvrir avec :
 
 - [https://gltf-viewer.donmccurdy.com](https://gltf-viewer.donmccurdy.com)  
 - Blender (Import glTF 2.0)  
