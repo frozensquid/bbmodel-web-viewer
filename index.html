@@ -6,12 +6,14 @@
 <title>BBModel Viewer</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #111; color: #e0e0e0; overflow: hidden; height: 100vh; }
-#viewer { position: absolute; inset: 0; }
-canvas { display: block; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #111; color: #e0e0e0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+.app-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; position: relative; }
+.viewer-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: #0d0d12; position: relative; }
+#viewer { flex: 1 1 auto; min-height: 200px; position: relative; width: 100%; }
+#viewer canvas { display: block; position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
 
 #toolbar {
-  position: absolute; top: 0; left: 0; right: 0; min-height: 48px;
+  position: relative; flex-shrink: 0; min-height: 48px;
   background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(12px);
   display: flex; align-items: center; flex-wrap: wrap; padding: 8px 16px; gap: 10px; z-index: 10;
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -41,7 +43,7 @@ canvas { display: block; }
 .spacer { flex: 1; }
 
 #dropzone {
-  position: absolute; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 100;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: #111; transition: opacity 0.4s;
 }
@@ -60,7 +62,7 @@ canvas { display: block; }
 #dropzone .drop-area .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
 
 #loading {
-  position: absolute; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: 200;
   display: none; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
 }
@@ -94,6 +96,7 @@ canvas { display: block; }
 #gif-modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 #gif-modal .hint { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.45; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.glb-meta { font-size: 11px; color: #666; }
 #loading-inner { text-align: center; }
 #loading-msg { margin-top: 14px; font-size: 13px; color: #aaa; }
 
@@ -130,11 +133,66 @@ canvas { display: block; }
   flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 100px;
 }
 #anim-bar .anim-label { font-size: 11px; color: #888; white-space: nowrap; min-width: 56px; text-align: right; }
+
+#light-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 280px; z-index: 15;
+  background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: none; flex-direction: column; overflow: hidden;
+  font-size: 12px;
+}
+#light-panel.open { display: flex; }
+#light-panel .lp-head {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#light-panel .lp-head h3 { font-size: 13px; font-weight: 700; color: #b8c0ff; margin: 0; }
+#light-panel .lp-head .lp-close {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+#light-panel .lp-head .lp-close:hover { color: #fff; }
+
+#light-panel .lp-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+#light-panel .lp-add {
+  margin: 0 14px 12px; padding: 8px; border-radius: 7px; border: 1px dashed rgba(124,138,255,0.4);
+  background: rgba(124,138,255,0.06); color: #b0b8ff; font-size: 12px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+#light-panel .lp-add:hover { background: rgba(124,138,255,0.15); border-color: #7c8aff; }
+.light-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; transition: border-color 0.15s;
+}
+.light-card.selected { border-color: rgba(124,138,255,0.6); background: rgba(124,138,255,0.08); }
+.light-card .lc-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+}
+.light-card .lc-name { font-weight: 600; color: #dde; font-size: 12px; }
+.light-card .lc-del {
+  background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 2px;
+}
+.light-card .lc-del:hover { color: #f66; }
+.light-card .lc-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.light-card .lc-row label { color: #999; font-size: 11px; min-width: 52px; }
+.light-card .lc-row input[type="color"] {
+  width: 28px; height: 22px; padding: 1px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px; cursor: pointer; background: transparent;
+}
+.light-card .lc-row input[type="range"] {
+  flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 0;
+}
+.light-card .lc-row .lc-val { color: #aaa; font-size: 10px; min-width: 28px; text-align: right; }
+.light-card .lc-row input[type="checkbox"] { accent-color: #7c8aff; cursor: pointer; }
+.light-card .lc-row .lc-chk-label { color: #aaa; font-size: 11px; cursor: pointer; }
+#light-panel .lp-hint {
+  padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; color: #555; line-height: 1.5;
+}
 </style>
 </head>
 <body>
-
-<div id="viewer"></div>
 
 <div id="toolbar">
   <span class="logo">BBModel Viewer</span>
@@ -153,6 +211,7 @@ canvas { display: block; }
       <button type="button" class="bg-preset" data-color="#e8e4dc" title="Clair" style="background:#e8e4dc"></button>
     </div>
     <button type="button" class="btn active" id="btn-grid" title="Afficher ou masquer la grille au sol">Grille</button>
+    <button type="button" class="btn" id="btn-lights" title="Gérer les sources de lumière">Lumières</button>
   </div>
   <span class="spacer"></span>
   <div class="toolbar-ctrl" id="turntable-wrap" title="Rotation automatique autour du modele">
@@ -161,16 +220,41 @@ canvas { display: block; }
     <input type="range" id="turntable-speed" min="0.5" max="6" step="0.25" value="2.5">
   </div>
   <span class="sep"></span>
-  <button type="button" class="btn" id="btn-gif" disabled title="Exporter un GIF turntable (360°)">GIF</button>
+  <button type="button" class="btn" id="btn-gif" disabled title="Exporter un GIF (turntable ou vue fixe, avec animation)">GIF</button>
+  <span class="sep"></span>
+  <button type="button" class="btn" id="btn-download-glb" disabled title="Disponible après chargement d'un modèle">Télécharger .glb</button>
+  <span class="glb-meta" id="glb-meta"></span>
   <span class="sep"></span>
   <label class="btn" id="btn-open">Ouvrir .bbmodel<input type="file" accept=".bbmodel" hidden></label>
 </div>
 
+<main class="app-main">
+  <section class="viewer-section">
+    <div id="viewer" aria-label="Vue 3D du modèle converti"></div>
+    <div id="light-panel">
+      <div class="lp-head">
+        <h3>Lumières</h3>
+        <button type="button" class="lp-close" id="lp-close" title="Fermer">×</button>
+      </div>
+      <div class="lp-body" id="lp-body"></div>
+      <button type="button" class="lp-add" id="lp-add">+ Ajouter une lumière</button>
+      <div class="lp-hint">Cliquez sur une sphère dans la scène pour sélectionner une lumière, puis déplacez-la avec le gizmo.</div>
+    </div>
+  </section>
+</main>
+
 <div id="gif-modal" aria-hidden="true">
   <div class="panel">
-    <h3>Exporter un GIF turntable</h3>
+    <h3>Exporter un GIF</h3>
     <div class="row">
-      <label for="gif-frames">Images (tour complet)</label>
+      <label for="gif-camera-mode">Caméra</label>
+      <select id="gif-camera-mode">
+        <option value="turntable">Turntable (360° autour du modèle)</option>
+        <option value="fixe">Vue fixe (position actuelle)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="gif-frames" id="gif-frames-label">Images (tour 360°)</label>
       <input type="number" id="gif-frames" min="12" max="120" value="48" step="1">
     </div>
     <div class="row">
@@ -181,7 +265,7 @@ canvas { display: block; }
       <label for="gif-width">Largeur max (px)</label>
       <input type="number" id="gif-width" min="240" max="800" value="480" step="20">
     </div>
-    <p class="hint">Une rotation caméra exacte sur 360° autour du modèle (boucle sans saut). Nécessite une connexion pour charger l’encodeur GIF.</p>
+    <p class="hint" id="gif-hint">Turntable : la caméra fait un tour de 360° sur le nombre d’images indiqué. Vue fixe : la caméra reste à la position actuelle. Si une animation est sélectionnée en bas de page, elle est rejouée depuis le début sur chaque image (la pause entre images définit la vitesse). Connexion Internet requise pour l’encodeur GIF.</p>
     <div class="actions">
       <button type="button" class="btn" id="gif-cancel">Annuler</button>
       <button type="button" class="btn" id="gif-export-run" style="background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #e0e4ff;">Exporter</button>
@@ -225,6 +309,9 @@ canvas { display: block; }
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 // ─── Blockbench face definitions (from three_custom.js setShape) ───
 const FACE_ORDER = ['east', 'west', 'up', 'down', 'south', 'north'];
@@ -407,6 +494,7 @@ async function bbmodelToScene(data) {
 
     const obj = new THREE.Group();
     obj.name = group.name || 'group';
+    obj.userData.bbUuid = uuid;
     obj.rotation.order = 'ZYX';
     obj.position.set(
       (origin[0] - parentOrigin[0]) * scale,
@@ -414,9 +502,7 @@ async function bbmodelToScene(data) {
       (origin[2] - parentOrigin[2]) * scale
     );
     const rot = group.rotation || [0,0,0];
-    if (rot[0] || rot[1] || rot[2]) {
-      obj.rotation.set(deg2rad(rot[0]), deg2rad(rot[1]), deg2rad(rot[2]));
-    }
+    obj.rotation.set(deg2rad(rot[0]), deg2rad(rot[1]), deg2rad(rot[2]));
 
     const allPos = [], allNrm = [], allUvs = [], allIdx = [];
     let offset = 0;
@@ -460,6 +546,55 @@ async function bbmodelToScene(data) {
 
   root.userData.nodeMap = nodeMap;
   return root;
+}
+
+function disposeObject3D(obj) {
+  if (!obj) return;
+  const doneMat = new Set();
+  const doneTex = new Set();
+  obj.traverse((o) => {
+    if (o.geometry) {
+      o.geometry.dispose();
+    }
+    if (o.material) {
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m || doneMat.has(m)) continue;
+        doneMat.add(m);
+        if (m.map && !doneTex.has(m.map)) {
+          doneTex.add(m.map);
+          m.map.dispose();
+        }
+        m.dispose();
+      }
+    }
+  });
+}
+
+/** Reconstruit la map uuid Blockbench → Object3D après chargement GLB (extras → userData). */
+function buildNodeMapFromLoadedGltf(root) {
+  const nodeMap = {};
+  root.traverse((o) => {
+    const id = o.userData && o.userData.bbUuid;
+    if (id) nodeMap[id] = o;
+  });
+  return nodeMap;
+}
+
+let lastGlbBlob = null;
+let lastGlbFileStem = 'model';
+
+function setGlbDownloadState(blob, stem) {
+  lastGlbBlob = blob;
+  lastGlbFileStem = stem || 'model';
+  const btn = document.getElementById('btn-download-glb');
+  const meta = document.getElementById('glb-meta');
+  if (btn) btn.disabled = !blob;
+  if (meta) {
+    meta.textContent = blob
+      ? `GLB généré · ${(blob.size / 1024).toFixed(1)} Ko`
+      : '';
+  }
 }
 
 // ─── Animation engine ───
@@ -510,49 +645,80 @@ function catmullRom(p0, p1, p2, p3, t) {
   );
 }
 
-function sampleChannel(keyframes, time, interp) {
+function sampleChannel(keyframes, time, animLoop, animLength) {
   if (!keyframes || keyframes.length === 0) return null;
   if (keyframes.length === 1) return keyframes[0].value.slice();
 
-  let i1 = 0;
-  for (let i = 0; i < keyframes.length; i++) {
-    if (keyframes[i].time <= time) i1 = i;
-  }
-  let i2 = i1 + 1;
-  if (i2 >= keyframes.length) {
-    return keyframes[keyframes.length - 1].value.slice();
+  const isLoop = animLoop === 'loop';
+  let before = null, after = null;
+  let beforeTime = -Infinity, afterTime = Infinity;
+
+  for (const kf of keyframes) {
+    if (kf.time < time) {
+      if (kf.time > beforeTime) { before = kf; beforeTime = kf.time; }
+    } else {
+      if (kf.time < afterTime) { after = kf; afterTime = kf.time; }
+    }
   }
 
-  const kf1 = keyframes[i1], kf2 = keyframes[i2];
-  const dt = kf2.time - kf1.time;
-  const t = dt > 0 ? Math.max(0, Math.min(1, (time - kf1.time) / dt)) : 0;
+  if (isLoop && keyframes.length >= 2) {
+    if (!before) {
+      before = keyframes[keyframes.length - 1];
+      beforeTime = before.time - animLength;
+    }
+    if (!after) {
+      after = keyframes[0];
+      afterTime = after.time + animLength;
+    }
+  }
 
-  const mode = interp || kf1.interpolation || 'linear';
-  if (mode === 'catmullrom') {
-    const i0 = Math.max(0, i1 - 1);
-    const i3 = Math.min(keyframes.length - 1, i2 + 1);
+  const eps = 1 / 1200;
+  if (before && Math.abs(beforeTime - time) < eps) return before.value.slice();
+  if (after && Math.abs(afterTime - time) < eps) return after.value.slice();
+  if (before && before.interpolation === 'step') return before.value.slice();
+  if (before && !after) return before.value.slice();
+  if (after && !before) return after.value.slice();
+  if (!before && !after) return null;
+
+  const alpha = (time - beforeTime) / (afterTime - beforeTime);
+  const mode = before.interpolation || 'linear';
+
+  if (mode === 'catmullrom' || (after && after.interpolation === 'catmullrom')) {
+    const sorted = keyframes.slice().sort((a, b) => a.time - b.time);
+    const bi = sorted.indexOf(before);
+    let p0 = sorted[bi - 1] || null;
+    let p3 = sorted[bi + 2] || null;
+    if (isLoop && sorted.length >= 3) {
+      if (!p0) p0 = sorted[sorted.length - 2];
+      if (!p3) p3 = sorted[1];
+    }
+    const v0 = p0 ? p0.value : before.value;
+    const v1 = before.value, v2 = after.value;
+    const v3 = p3 ? p3.value : after.value;
     return [
-      catmullRom(keyframes[i0].value[0], kf1.value[0], kf2.value[0], keyframes[i3].value[0], t),
-      catmullRom(keyframes[i0].value[1], kf1.value[1], kf2.value[1], keyframes[i3].value[1], t),
-      catmullRom(keyframes[i0].value[2], kf1.value[2], kf2.value[2], keyframes[i3].value[2], t),
+      catmullRom(v0[0], v1[0], v2[0], v3[0], alpha),
+      catmullRom(v0[1], v1[1], v2[1], v3[1], alpha),
+      catmullRom(v0[2], v1[2], v2[2], v3[2], alpha),
     ];
   }
-  // linear
+
   return [
-    kf1.value[0] + (kf2.value[0] - kf1.value[0]) * t,
-    kf1.value[1] + (kf2.value[1] - kf1.value[1]) * t,
-    kf1.value[2] + (kf2.value[2] - kf1.value[2]) * t,
+    before.value[0] + (after.value[0] - before.value[0]) * alpha,
+    before.value[1] + (after.value[1] - before.value[1]) * alpha,
+    before.value[2] + (after.value[2] - before.value[2]) * alpha,
   ];
 }
 
 function applyAnimation(anim, time, nodeMap, baseTransforms) {
+  resetToBase(nodeMap, baseTransforms);
+  const loop = anim.loop, len = anim.length;
   for (const [uuid, track] of Object.entries(anim.tracks)) {
     const obj = nodeMap[uuid];
     if (!obj) continue;
     const base = baseTransforms[uuid];
     if (!base) continue;
 
-    const rot = sampleChannel(track.channels.rotation, time);
+    const rot = sampleChannel(track.channels.rotation, time, loop, len);
     if (rot) {
       obj.rotation.set(
         base.rotation[0] + deg2rad(rot[0]),
@@ -560,7 +726,7 @@ function applyAnimation(anim, time, nodeMap, baseTransforms) {
         base.rotation[2] + deg2rad(rot[2]),
       );
     }
-    const pos = sampleChannel(track.channels.position, time);
+    const pos = sampleChannel(track.channels.position, time, loop, len);
     if (pos) {
       const s = 1 / 16;
       obj.position.set(
@@ -569,9 +735,13 @@ function applyAnimation(anim, time, nodeMap, baseTransforms) {
         base.position[2] + pos[2] * s,
       );
     }
-    const scl = sampleChannel(track.channels.scale, time);
+    const scl = sampleChannel(track.channels.scale, time, loop, len);
     if (scl) {
-      obj.scale.set(scl[0], scl[1], scl[2]);
+      obj.scale.set(
+        scl[0] || 0.00001,
+        scl[1] || 0.00001,
+        scl[2] || 0.00001,
+      );
     }
   }
 }
@@ -707,16 +877,24 @@ animTimeSlider.addEventListener('input', () => {
 
 // ─── Three.js Viewer ───
 const container = document.getElementById('viewer');
+function getViewerSize() {
+  const w = Math.max(1, container.clientWidth || 1);
+  const h = Math.max(1, container.clientHeight || 1);
+  return { w, h };
+}
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+const vs = getViewerSize();
+renderer.setSize(vs.w, vs.h);
 renderer.setClearColor(0x1a1a2e);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1a2e);
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 100);
+const camera = new THREE.PerspectiveCamera(45, vs.w / vs.h, 0.01, 100);
 camera.position.set(2, 1.8, 3);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -750,13 +928,25 @@ controls.addEventListener('start', () => {
 });
 
 // Lights
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(3, 5, 4);
 scene.add(dirLight);
 const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
 dirLight2.position.set(-3, 2, -4);
 scene.add(dirLight2);
+
+// Shadow ground plane
+const shadowGround = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.ShadowMaterial({ opacity: 0.35 })
+);
+shadowGround.rotation.x = -Math.PI / 2;
+shadowGround.position.y = -0.002;
+shadowGround.receiveShadow = true;
+shadowGround.visible = false;
+scene.add(shadowGround);
 
 // Grid
 const grid = new THREE.GridHelper(10, 20, 0x333355, 0x222244);
@@ -784,6 +974,20 @@ function setGridVisible(on) {
   try { localStorage.setItem(GRID_STORAGE_KEY, on ? '1' : '0'); } catch (_) {}
 }
 
+let currentModel = null;
+
+function refreshShadowSystem() {
+  const anyShadow = userLights.some(e => e.castShadow);
+  renderer.shadowMap.enabled = anyShadow;
+  shadowGround.visible = anyShadow;
+  if (currentModel) {
+    currentModel.traverse(o => {
+      if (o.isMesh) o.castShadow = anyShadow;
+    });
+  }
+  scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+}
+
 function loadViewerPrefs() {
   try {
     const bg = localStorage.getItem(BG_STORAGE_KEY);
@@ -807,14 +1011,289 @@ if (btnGrid) {
 
 loadViewerPrefs();
 
-let currentModel = null;
+
+// ─── Light Editor ───
+const lightPanel = document.getElementById('light-panel');
+const lpBody = document.getElementById('lp-body');
+const btnLights = document.getElementById('btn-lights');
+const lpClose = document.getElementById('lp-close');
+const lpAdd = document.getElementById('lp-add');
+
+const userLights = [];
+let selectedLightIdx = -1;
+let lightIdCounter = 0;
+
+const tfControls = new TransformControls(camera, renderer.domElement);
+tfControls.setMode('translate');
+tfControls.setSize(0.85);
+scene.add(tfControls);
+
+tfControls.addEventListener('dragging-changed', (e) => {
+  controls.enabled = !e.value;
+});
+tfControls.addEventListener('objectChange', () => {
+  if (selectedLightIdx >= 0 && selectedLightIdx < userLights.length) {
+    const entry = userLights[selectedLightIdx];
+    entry.light.position.copy(entry.helper.position);
+  }
+});
+
+function toggleLightPanel(open) {
+  const isOpen = lightPanel.classList.contains('open');
+  const target = open !== undefined ? open : !isOpen;
+  lightPanel.classList.toggle('open', target);
+  if (btnLights) btnLights.classList.toggle('active', target);
+  if (!target) deselectLight();
+}
+
+if (btnLights) btnLights.addEventListener('click', () => toggleLightPanel());
+if (lpClose) lpClose.addEventListener('click', () => toggleLightPanel(false));
+
+function createUserLight(opts) {
+  const id = lightIdCounter++;
+  const color = opts?.color || '#ffddaa';
+  const intensity = opts?.intensity ?? 2.0;
+  const pos = opts?.position || [1, 1.5, 1];
+  const castShadow = opts?.castShadow ?? false;
+
+  const light = new THREE.PointLight(new THREE.Color(color), intensity, 0, 1.5);
+  light.position.set(pos[0], pos[1], pos[2]);
+  light.castShadow = castShadow;
+  light.shadow.mapSize.set(1024, 1024);
+  light.shadow.bias = -0.001;
+  scene.add(light);
+
+  const helperGeo = new THREE.SphereGeometry(0.15, 16, 12);
+  const helperMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color) });
+  const helper = new THREE.Mesh(helperGeo, helperMat);
+  helper.position.set(pos[0], pos[1], pos[2]);
+  helper.userData.lightIdx = userLights.length;
+  helper.userData.isLightHelper = true;
+  scene.add(helper);
+
+  const entry = { id, light, helper, color, intensity, castShadow };
+  userLights.push(entry);
+  rebuildLightPanel();
+  selectLight(userLights.length - 1);
+  return entry;
+}
+
+function removeUserLight(idx) {
+  if (idx < 0 || idx >= userLights.length) return;
+  const entry = userLights[idx];
+  if (selectedLightIdx === idx) deselectLight();
+  scene.remove(entry.light);
+  if (entry.light.dispose) entry.light.dispose();
+  scene.remove(entry.helper);
+  entry.helper.geometry.dispose();
+  entry.helper.material.dispose();
+  userLights.splice(idx, 1);
+  userLights.forEach((e, i) => { e.helper.userData.lightIdx = i; });
+  if (selectedLightIdx > idx) selectedLightIdx--;
+  else if (selectedLightIdx >= userLights.length) selectedLightIdx = -1;
+  refreshShadowSystem();
+  rebuildLightPanel();
+}
+
+function selectLight(idx) {
+  if (idx < 0 || idx >= userLights.length) return;
+  if (selectedLightIdx === idx) return;
+  selectedLightIdx = idx;
+  const entry = userLights[idx];
+  tfControls.attach(entry.helper);
+  rebuildLightPanel();
+}
+
+function deselectLight() {
+  if (selectedLightIdx === -1) return;
+  selectedLightIdx = -1;
+  tfControls.detach();
+  rebuildLightPanel();
+}
+
+function updateLightColor(idx, hex) {
+  if (idx < 0 || idx >= userLights.length) return;
+  const entry = userLights[idx];
+  entry.color = hex;
+  entry.light.color.set(hex);
+  entry.helper.material.color.set(hex);
+}
+
+function updateLightIntensity(idx, val) {
+  if (idx < 0 || idx >= userLights.length) return;
+  const entry = userLights[idx];
+  entry.intensity = val;
+  entry.light.intensity = val;
+}
+
+function updateLightShadow(idx, on) {
+  if (idx < 0 || idx >= userLights.length) return;
+  const entry = userLights[idx];
+  entry.castShadow = on;
+  entry.light.castShadow = on;
+  refreshShadowSystem();
+}
+
+function rebuildLightPanel() {
+  if (!lpBody) return;
+  lpBody.innerHTML = '';
+  if (userLights.length === 0) {
+    lpBody.innerHTML = '<div style="color:#555;text-align:center;padding:20px 0;font-size:11px;">Aucune lumi\u00e8re ajout\u00e9e</div>';
+    return;
+  }
+  userLights.forEach((entry, i) => {
+    const card = document.createElement('div');
+    card.className = 'light-card' + (i === selectedLightIdx ? ' selected' : '');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.lc-del') || e.target.closest('input')) return;
+      selectLight(i);
+    });
+
+    const hdr = document.createElement('div');
+    hdr.className = 'lc-header';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'lc-name';
+    nameSpan.textContent = 'Point Light ' + (entry.id + 1);
+    hdr.appendChild(nameSpan);
+    const del = document.createElement('button');
+    del.className = 'lc-del';
+    del.title = 'Supprimer';
+    del.textContent = '\u2715';
+    del.addEventListener('click', (e) => { e.stopPropagation(); removeUserLight(i); });
+    hdr.appendChild(del);
+    card.appendChild(hdr);
+
+    const rowColor = document.createElement('div');
+    rowColor.className = 'lc-row';
+    rowColor.innerHTML = '<label>Couleur</label>';
+    const cInput = document.createElement('input');
+    cInput.type = 'color';
+    cInput.value = entry.color;
+    cInput.addEventListener('input', () => updateLightColor(i, cInput.value));
+    rowColor.appendChild(cInput);
+    card.appendChild(rowColor);
+
+    const rowInt = document.createElement('div');
+    rowInt.className = 'lc-row';
+    rowInt.innerHTML = '<label>Intensit\u00e9</label>';
+    const iRange = document.createElement('input');
+    iRange.type = 'range';
+    iRange.min = '0';
+    iRange.max = '8';
+    iRange.step = '0.1';
+    iRange.value = String(entry.intensity);
+    const iVal = document.createElement('span');
+    iVal.className = 'lc-val';
+    iVal.textContent = entry.intensity.toFixed(1);
+    iRange.addEventListener('input', () => {
+      const v = parseFloat(iRange.value);
+      updateLightIntensity(i, v);
+      iVal.textContent = v.toFixed(1);
+    });
+    rowInt.appendChild(iRange);
+    rowInt.appendChild(iVal);
+    card.appendChild(rowInt);
+
+    const rowSh = document.createElement('div');
+    rowSh.className = 'lc-row';
+    rowSh.innerHTML = '<label>Ombre</label>';
+    const shCheck = document.createElement('input');
+    shCheck.type = 'checkbox';
+    shCheck.checked = entry.castShadow;
+    shCheck.addEventListener('change', () => updateLightShadow(i, shCheck.checked));
+    rowSh.appendChild(shCheck);
+    const shLbl = document.createElement('span');
+    shLbl.className = 'lc-chk-label';
+    shLbl.textContent = 'Projeter';
+    shLbl.addEventListener('click', () => { shCheck.checked = !shCheck.checked; updateLightShadow(i, shCheck.checked); });
+    rowSh.appendChild(shLbl);
+    card.appendChild(rowSh);
+
+    lpBody.appendChild(card);
+  });
+}
+
+if (lpAdd) {
+  lpAdd.addEventListener('click', () => {
+    let cx = 0, cy = 1.5, cz = 0;
+    if (currentModel) {
+      const box = new THREE.Box3().setFromObject(currentModel);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      cx = center.x;
+      cy = box.max.y + Math.max(size.y * 0.8, 0.5);
+      cz = center.z;
+    }
+    const ox = (Math.random() - 0.5) * 1.0;
+    const oz = (Math.random() - 0.5) * 1.0;
+    createUserLight({ position: [cx + ox, cy, cz + oz] });
+  });
+}
+
+const lightRaycaster = new THREE.Raycaster();
+const lightMouse = new THREE.Vector2();
+
+function onViewerPointerDown(e) {
+  if (!lightPanel.classList.contains('open')) return;
+  if (tfControls.dragging) return;
+  const rect = container.getBoundingClientRect();
+  lightMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  lightMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  lightRaycaster.setFromCamera(lightMouse, camera);
+  const helpers = userLights.map(l => l.helper);
+  const hits = lightRaycaster.intersectObjects(helpers);
+  if (hits.length > 0) {
+    const idx = hits[0].object.userData.lightIdx;
+    if (idx !== undefined) selectLight(idx);
+  }
+}
+
+container.addEventListener('pointerdown', onViewerPointerDown);
+
+rebuildLightPanel();
+
 
 const loadingEl = document.getElementById('loading');
 const loadingMsg = document.getElementById('loading-msg');
 const gifModal = document.getElementById('gif-modal');
 const btnGif = document.getElementById('btn-gif');
+const gifCameraMode = document.getElementById('gif-camera-mode');
+const gifFramesLabel = document.getElementById('gif-frames-label');
 
-async function exportTurntableGif() {
+function updateGifModalHints() {
+  if (gifFramesLabel && gifCameraMode) {
+    gifFramesLabel.textContent = gifCameraMode.value === 'turntable'
+      ? 'Images (tour 360°)'
+      : 'Nombre d’images';
+  }
+}
+
+function gifAnimTimeAtFrame(anim, frameIndex, delaySec) {
+  const t = frameIndex * delaySec;
+  if (!anim) return 0;
+  if (anim.loop === 'loop') return anim.length > 0 ? t % anim.length : 0;
+  return Math.min(t, anim.length);
+}
+
+function restoreViewerAfterGif(restoreSel, restoreTime, restorePlaying) {
+  const idx = parseInt(restoreSel, 10);
+  if (idx >= 0 && idx < animList.length) {
+    activeAnim = animList[idx];
+    animTime = restoreTime;
+    animPlaying = restorePlaying;
+    applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
+    if (animPlaying) lastFrameTime = performance.now();
+  } else {
+    activeAnim = null;
+    animPlaying = false;
+    animTime = 0;
+    resetToBase(animNodeMap, baseTransforms);
+  }
+  updateAnimUI();
+}
+
+async function exportViewerGif() {
   if (!currentModel) return;
 
   let numFrames = parseInt(document.getElementById('gif-frames').value, 10);
@@ -823,6 +1302,12 @@ async function exportTurntableGif() {
   numFrames = Math.max(12, Math.min(120, numFrames));
   delayMs = Math.max(20, Math.min(250, delayMs));
   maxW = Math.max(240, Math.min(800, maxW));
+
+  const useTurntable = !gifCameraMode || gifCameraMode.value === 'turntable';
+  const exportAnim = activeAnim;
+  const restoreSel = animSelect ? animSelect.value : '-1';
+  const restoreTime = animTime;
+  const restorePlaying = animPlaying;
 
   gifModal.classList.remove('open');
   gifModal.setAttribute('aria-hidden', 'true');
@@ -839,6 +1324,14 @@ async function exportTurntableGif() {
 
   setTurntable(false);
   controls.enabled = false;
+
+  // Hide light helpers & gizmo during export
+  const helperWasVisible = userLights.map(e => e.helper.visible);
+  userLights.forEach(e => { e.helper.visible = false; });
+  const gizmoWasAttached = !!tfControls.object;
+  if (gizmoWasAttached) tfControls.detach();
+
+  const delaySec = delayMs / 1000;
 
   try {
     const { GIFEncoder, quantize, applyPalette } = await import(
@@ -859,21 +1352,22 @@ async function exportTurntableGif() {
 
     const gif = GIFEncoder();
 
-    const gifAnimWasPlaying = animPlaying;
-    const gifAnimStartTime = animTime;
-
     for (let i = 0; i < numFrames; i++) {
       loadingMsg.textContent = `Capture ${i + 1} / ${numFrames}`;
 
-      if (activeAnim && gifAnimWasPlaying) {
-        const frameDt = (delayMs / 1000);
-        const t = gifAnimStartTime + frameDt * i;
-        const at = activeAnim.loop === 'loop' ? (t % activeAnim.length) : Math.min(t, activeAnim.length);
-        applyAnimation(activeAnim, at, animNodeMap, baseTransforms);
+      if (exportAnim) {
+        const at = gifAnimTimeAtFrame(exportAnim, i, delaySec);
+        applyAnimation(exportAnim, at, animNodeMap, baseTransforms);
+      } else {
+        resetToBase(animNodeMap, baseTransforms);
       }
 
-      sph.theta = startTheta + (Math.PI * 2 * i) / numFrames;
-      camera.position.setFromSpherical(sph).add(prevTarget);
+      if (useTurntable) {
+        sph.theta = startTheta + (Math.PI * 2 * i) / numFrames;
+        camera.position.setFromSpherical(sph).add(prevTarget);
+      } else {
+        camera.position.copy(prevPos);
+      }
       camera.lookAt(prevTarget);
       controls.update();
       renderer.render(scene, camera);
@@ -899,7 +1393,9 @@ async function exportTurntableGif() {
     const blob = new Blob([out], { type: 'image/gif' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${safeName}_turntable.gif`;
+    const modePart = useTurntable ? 'turntable' : 'fixe';
+    const animPart = exportAnim ? String(exportAnim.name || 'anim').replace(/[^\w\-]+/g, '_') : 'pose';
+    a.download = `${safeName}_${modePart}_${animPart}.gif`;
     a.click();
     URL.revokeObjectURL(a.href);
   } catch (err) {
@@ -913,15 +1409,30 @@ async function exportTurntableGif() {
     controls.target.copy(prevTarget);
     controls.enabled = true;
     controls.update();
+
+    // Restore light helpers & gizmo
+    userLights.forEach((e, i) => { e.helper.visible = helperWasVisible[i] ?? true; });
+    if (gizmoWasAttached && selectedLightIdx >= 0 && selectedLightIdx < userLights.length) {
+      tfControls.attach(userLights[selectedLightIdx].helper);
+    }
+
     renderer.render(scene, camera);
+    restoreViewerAfterGif(restoreSel, restoreTime, restorePlaying);
     loadingMsg.textContent = '';
     loadingEl.classList.remove('active');
   }
 }
 
+if (gifCameraMode) {
+  gifCameraMode.addEventListener('change', updateGifModalHints);
+}
+const gifFramesInput = document.getElementById('gif-frames');
+if (gifFramesInput) gifFramesInput.addEventListener('input', updateGifModalHints);
+
 if (btnGif) {
   btnGif.addEventListener('click', () => {
     if (!currentModel || btnGif.disabled) return;
+    updateGifModalHints();
     gifModal.classList.add('open');
     gifModal.setAttribute('aria-hidden', 'false');
   });
@@ -933,7 +1444,7 @@ document.getElementById('gif-cancel').addEventListener('click', () => {
 });
 
 document.getElementById('gif-export-run').addEventListener('click', () => {
-  exportTurntableGif();
+  exportViewerGif();
 });
 
 gifModal.addEventListener('click', (e) => {
@@ -951,11 +1462,19 @@ function animate() {
 }
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+function onViewerResize() {
+  const { w, h } = getViewerSize();
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onViewerResize);
+if (typeof ResizeObserver !== 'undefined' && container) {
+  new ResizeObserver(() => onViewerResize()).observe(container);
+}
+requestAnimationFrame(() => onViewerResize());
+
+
 
 // ─── Frame camera on model ───
 function frameModel(obj) {
@@ -968,6 +1487,46 @@ function frameModel(obj) {
   controls.target.copy(center);
   camera.position.set(center.x + dist * 0.7, center.y + dist * 0.5, center.z + dist * 0.7);
   controls.update();
+}
+
+async function exportRootToGlbBuffer(root) {
+  const exporter = new GLTFExporter();
+  const opts = { binary: true, embedImages: true };
+  if (typeof exporter.parseAsync === 'function') {
+    return exporter.parseAsync(root, opts);
+  }
+  return new Promise((resolve, reject) => {
+    try {
+      exporter.parse(root, (result) => {
+        if (result instanceof ArrayBuffer) resolve(result);
+        else reject(new Error('Export GLB : résultat inattendu'));
+      }, opts);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+function collectUuidToBoneName(rawNodeMap) {
+  const uuidToName = {};
+  for (const [u, o] of Object.entries(rawNodeMap || {})) {
+    uuidToName[u] = (o && o.name) ? o.name : '';
+  }
+  return uuidToName;
+}
+
+function resolveNodeMapAfterGltf(gltfScene, uuidToName) {
+  const m = buildNodeMapFromLoadedGltf(gltfScene);
+  const nameToGroup = new Map();
+  gltfScene.traverse((o) => {
+    if (o.isGroup && o.name) nameToGroup.set(o.name, o);
+  });
+  const out = { ...m };
+  for (const [uuid, name] of Object.entries(uuidToName)) {
+    if (out[uuid]) continue;
+    if (name && nameToGroup.has(name)) out[uuid] = nameToGroup.get(name);
+  }
+  return out;
 }
 
 // ─── Load bbmodel ───
@@ -983,34 +1542,79 @@ async function handleFile(file) {
     const text = await file.text();
     const data = JSON.parse(text);
 
-    if (currentModel) { scene.remove(currentModel); currentModel = null; }
+    if (currentModel) {
+      scene.remove(currentModel);
+      disposeObject3D(currentModel);
+      currentModel = null;
+    }
 
-    const model = await bbmodelToScene(data);
-    scene.add(model);
-    currentModel = model;
+    loadingMsg.textContent = 'Lecture du modèle…';
+    const rawRoot = await bbmodelToScene(data);
+    const savedUuidToName = collectUuidToBoneName(rawRoot.userData.nodeMap);
+
+    let displayRoot;
+    let nodeMapForAnim;
+
+    try {
+      loadingMsg.textContent = 'Conversion BBModel → GLB…';
+      const glbBuffer = await exportRootToGlbBuffer(rawRoot);
+      const stem = (data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, ''))
+        .replace(/[^\w\-]+/g, '_') || 'model';
+      const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+      setGlbDownloadState(blob, stem);
+
+      loadingMsg.textContent = 'Chargement du GLB…';
+      const url = URL.createObjectURL(blob);
+      const loader = new GLTFLoader();
+      const gltf = await loader.loadAsync(url);
+      URL.revokeObjectURL(url);
+
+      disposeObject3D(rawRoot);
+      displayRoot = gltf.scene;
+      nodeMapForAnim = resolveNodeMapAfterGltf(gltf.scene, savedUuidToName);
+    } catch (glbErr) {
+      console.warn(glbErr);
+      setGlbDownloadState(null);
+      displayRoot = rawRoot;
+      nodeMapForAnim = rawRoot.userData.nodeMap || {};
+      alert('La conversion GLB a échoué ; affichage direct du maillage.\n' + (glbErr.message || glbErr));
+    }
+
+    scene.add(displayRoot);
+    currentModel = displayRoot;
+
+    displayRoot.traverse(o => {
+      if (o.isMesh) {
+        o.receiveShadow = true;
+      }
+    });
+    refreshShadowSystem();
 
     const gifBtn = document.getElementById('btn-gif');
     if (gifBtn) gifBtn.disabled = false;
 
-    setupAnimations(data, model.userData.nodeMap || {});
+    setupAnimations(data, nodeMapForAnim);
 
-    frameModel(model);
+    frameModel(displayRoot);
     setTurntable(true);
+    onViewerResize();
 
     const nameEl = document.getElementById('model-name');
     if (nameEl) nameEl.textContent = data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, '');
 
-    const box = new THREE.Box3().setFromObject(model);
+    const box = new THREE.Box3().setFromObject(displayRoot);
     const s = box.getSize(new THREE.Vector3());
     const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
     const infoEl = document.getElementById('info');
     if (infoEl) {
-      infoEl.textContent = `${elCount} cubes | ${s.x.toFixed(2)} x ${s.y.toFixed(2)} x ${s.z.toFixed(2)}`;
+      const mode = lastGlbBlob ? 'affichage via GLB' : 'maillage interne (sans GLB)';
+      infoEl.textContent = `${elCount} cubes | ${s.x.toFixed(2)} × ${s.y.toFixed(2)} × ${s.z.toFixed(2)} — ${mode}`;
     }
   } catch (err) {
     console.error(err);
     alert('Erreur lors du chargement: ' + err.message);
     document.getElementById('dropzone').classList.remove('hidden');
+    setGlbDownloadState(null);
     if (!currentModel) {
       const gifBtn = document.getElementById('btn-gif');
       if (gifBtn) gifBtn.disabled = true;
@@ -1020,6 +1624,15 @@ async function handleFile(file) {
     loadingMsg.textContent = '';
   }
 }
+
+document.getElementById('btn-download-glb')?.addEventListener('click', () => {
+  if (!lastGlbBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(lastGlbBlob);
+  a.download = `${lastGlbFileStem}.glb`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
 
 // ─── UI: drag & drop + file input ───
 const dropzone = document.getElementById('dropzone');
