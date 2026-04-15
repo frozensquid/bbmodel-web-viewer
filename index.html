@@ -295,6 +295,72 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
 }
 
+#text-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 300px; z-index: 16;
+  background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: none; flex-direction: column; overflow: hidden; font-size: 12px;
+}
+#text-panel.open { display: flex; }
+#text-panel .tp-head {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#text-panel .tp-head h3 { font-size: 13px; font-weight: 700; color: #b8c0ff; margin: 0; }
+#text-panel .tp-close {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+#text-panel .tp-close:hover { color: #fff; }
+#text-panel .tp-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+#text-panel .tp-add {
+  margin: 0 14px 12px; padding: 8px; border-radius: 7px; border: 1px dashed rgba(124,138,255,0.4);
+  background: rgba(124,138,255,0.06); color: #b0b8ff; font-size: 12px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+#text-panel .tp-add:hover { background: rgba(124,138,255,0.15); border-color: #7c8aff; }
+#text-panel .tp-hint {
+  padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; color: #555; line-height: 1.5;
+}
+.tx-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; transition: border-color 0.15s; cursor: pointer;
+}
+.tx-card.selected { border-color: rgba(124,138,255,0.6); background: rgba(124,138,255,0.08); }
+.tx-card .tx-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.tx-card .tx-preview {
+  width: 36px; height: 36px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0; background: #0a0a10; object-fit: contain;
+}
+.tx-card .tx-title { font-weight: 600; color: #dde; font-size: 11px; flex: 1; word-break: break-all; }
+.tx-card .tx-del {
+  background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.tx-card .tx-del:hover { color: #f66; }
+.tx-card .tx-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.tx-card .tx-row label { color: #999; font-size: 11px; min-width: 52px; }
+.tx-card .tx-row input[type="color"] {
+  width: 28px; height: 26px; padding: 1px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px; cursor: pointer; background: transparent;
+}
+.tx-card .tx-row input[type="range"] { flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 0; }
+.tx-card .tx-row .tx-val { color: #aaa; font-size: 10px; min-width: 32px; text-align: right; }
+.tx-card .tx-row select, .tx-card .tx-row textarea {
+  flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);
+  background: #12121a; color: #ddd; font-size: 11px; font-family: inherit;
+}
+.tx-card .tx-row textarea { min-height: 52px; resize: vertical; }
+.tx-card .ic-modes { display: flex; gap: 4px; margin-top: 4px; }
+.tx-card .ic-mode-btn {
+  flex: 1; padding: 4px 0; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: #999; font-size: 11px; cursor: pointer;
+  text-align: center; transition: all 0.15s;
+}
+.tx-card .ic-mode-btn:hover { background: rgba(255,255,255,0.08); color: #ccc; }
+.tx-card .ic-mode-btn.active {
+  background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
+}
+
 #model-panel {
   position: absolute; top: 0; right: 0; bottom: 0; width: 300px; z-index: 17;
   background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
@@ -407,6 +473,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   <button type="button" class="btn" id="btn-env" data-i18n="toolbar.env" data-i18n-title="toolbar.envTitle" title="Fond, sol et grille">Environnement</button>
   <button type="button" class="btn" id="btn-models" data-i18n="toolbar.models" data-i18n-title="toolbar.modelsTitle" title="Modèles 3D">Modèles</button>
   <button type="button" class="btn" id="btn-images" data-i18n="toolbar.images" data-i18n-title="toolbar.imagesTitle" title="Ajouter et positionner des images">Images</button>
+  <button type="button" class="btn" id="btn-texts" data-i18n="toolbar.texts" data-i18n-title="toolbar.textsTitle" title="Texte 3D">Texte</button>
   <button type="button" class="btn" id="btn-lights" data-i18n="toolbar.lights" data-i18n-title="toolbar.lightsTitle" title="Gérer les sources de lumière">Lumières</button>
   <button type="button" class="btn" id="btn-cam" data-i18n="toolbar.camera" data-i18n-title="toolbar.cameraTitle" title="Caméra d'export GIF">🎬 Caméra</button>
   <span class="spacer"></span>
@@ -502,6 +569,15 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       <div class="ip-body" id="ip-body"></div>
       <button type="button" class="ip-add" id="ip-add" data-i18n="imagePanel.add">+ Ajouter une image</button>
       <div class="ip-hint" data-i18n="imagePanel.hint">Cliquez sur une image dans la scène pour la sélectionner, puis déplacez-la ou tournez-la.</div>
+    </div>
+    <div id="text-panel">
+      <div class="tp-head">
+        <h3 data-i18n="textPanel.title">Texte</h3>
+        <button type="button" class="tp-close" id="tp-close" data-i18n-title="textPanel.close" title="Fermer">×</button>
+      </div>
+      <div class="tp-body" id="tp-body"></div>
+      <button type="button" class="tp-add" id="tp-add" data-i18n="textPanel.add">+ Ajouter un texte</button>
+      <div class="tp-hint" data-i18n="textPanel.hint">Sélectionnez un texte dans la scène pour le déplacer ou le tourner.</div>
     </div>
     <div id="light-panel">
       <div class="lp-head">
@@ -685,6 +761,21 @@ const I18N_DATA = {
     'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Ajouter et positionner des images dans la scène',
+    'toolbar.texts': 'Texte',
+    'toolbar.textsTitle': 'Ajouter et mettre en forme du texte dans la scène',
+    'textPanel.title': 'Texte',
+    'textPanel.close': 'Fermer',
+    'textPanel.add': '+ Ajouter un texte',
+    'textPanel.hint': 'Cliquez sur un texte dans la scène pour le sélectionner, modifiez le contenu ci-dessous, puis déplacez-le ou tournez-le avec le gizmo.',
+    'textPanel.empty': 'Aucun texte',
+    'textPanel.content': 'Contenu',
+    'textPanel.color': 'Couleur',
+    'textPanel.font': 'Police',
+    'textPanel.fontSize': 'Taille police',
+    'textPanel.worldScale': 'Taille dans la scène',
+    'textPanel.move': 'Déplacer',
+    'textPanel.rotate': 'Tourner',
+    'textPanel.delete': 'Supprimer',
     'imagePanel.title': 'Images',
     'imagePanel.close': 'Fermer',
     'imagePanel.add': '+ Ajouter une image',
@@ -815,6 +906,21 @@ const I18N_DATA = {
     'camPanel.disabled': 'Camera disabled — GIF will use the editor view.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Add and position images in the scene',
+    'toolbar.texts': 'Text',
+    'toolbar.textsTitle': 'Add and style text in the scene',
+    'textPanel.title': 'Text',
+    'textPanel.close': 'Close',
+    'textPanel.add': '+ Add text',
+    'textPanel.hint': 'Click text in the scene to select it, edit it below, then move or rotate it with the gizmo.',
+    'textPanel.empty': 'No text added',
+    'textPanel.content': 'Content',
+    'textPanel.color': 'Color',
+    'textPanel.font': 'Font',
+    'textPanel.fontSize': 'Font size',
+    'textPanel.worldScale': 'Scene size',
+    'textPanel.move': 'Move',
+    'textPanel.rotate': 'Rotate',
+    'textPanel.delete': 'Delete',
     'imagePanel.title': 'Images',
     'imagePanel.close': 'Close',
     'imagePanel.add': '+ Add an image',
@@ -889,7 +995,14 @@ function loadLang(lang) {
   currentLang = lang;
   try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
   applyI18nToDom();
-  if (i18nReady) { rebuildLightPanel(); rebuildCamPanel(); rebuildImagePanel(); rebuildModelPanel(); refreshDynamicTexts(); }
+  if (i18nReady) {
+    rebuildLightPanel();
+    rebuildCamPanel();
+    rebuildImagePanel();
+    if (typeof rebuildTextPanel === 'function') rebuildTextPanel();
+    rebuildModelPanel();
+    refreshDynamicTexts();
+  }
 }
 
 {
@@ -1960,7 +2073,7 @@ const btnEnv = document.getElementById('btn-env');
 function toggleEnvPanel(open) {
   const isOpen = envPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleModelPanel(false); if (typeof toggleCamPanel === 'function') toggleCamPanel(false); }
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleTextPanel(false); toggleModelPanel(false); if (typeof toggleCamPanel === 'function') toggleCamPanel(false); }
   envPanel.classList.toggle('open', target);
   if (btnEnv) btnEnv.classList.toggle('active', target);
 }
@@ -2018,7 +2131,7 @@ tfControls.addEventListener('objectChange', () => {
 function toggleLightPanel(open) {
   const isOpen = lightPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleImagePanel(false); toggleCamPanel(false); toggleModelPanel(false); }
+  if (target) { toggleImagePanel(false); toggleTextPanel(false); toggleCamPanel(false); toggleModelPanel(false); }
   lightPanel.classList.toggle('open', target);
   if (btnLights) btnLights.classList.toggle('active', target);
   if (!target) deselectLight();
@@ -2077,6 +2190,7 @@ function selectLight(idx) {
   if (idx < 0 || idx >= userLights.length) return;
   if (selectedLightIdx === idx) return;
   deselectImage();
+  deselectText();
   deselectExportCam();
   deselectModel();
   selectedLightIdx = idx;
@@ -2219,7 +2333,8 @@ function onViewerPointerDown(e) {
   if (tfControls.dragging) return;
   const lpOpen = lightPanel.classList.contains('open');
   const ipOpen = imagePanel && imagePanel.classList.contains('open');
-  if (!lpOpen && !ipOpen && !modelPanel.classList.contains('open') && editorModels.length === 0) return;
+  const tpOpen = textPanel && textPanel.classList.contains('open');
+  if (!lpOpen && !ipOpen && !tpOpen && !modelPanel.classList.contains('open') && editorModels.length === 0) return;
   const rect = container.getBoundingClientRect();
   lightMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   lightMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -2240,6 +2355,14 @@ function onViewerPointerDown(e) {
     if (hits.length > 0) {
       const idx = hits[0].object.userData.imageIdx;
       if (idx !== undefined) { selectImage(idx); return; }
+    }
+  }
+  if (tpOpen && userTexts.length > 0) {
+    const meshes = userTexts.map(te => te.mesh);
+    const hits = lightRaycaster.intersectObjects(meshes);
+    if (hits.length > 0) {
+      const idx = hits[0].object.userData.textIdx;
+      if (idx !== undefined) { selectText(idx); return; }
     }
   }
   if (editorModels.length > 0) {
@@ -2280,7 +2403,7 @@ let camGizmoMode = 'translate';
 function toggleCamPanel(open) {
   const isOpen = camPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleModelPanel(false); }
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleTextPanel(false); toggleModelPanel(false); }
   camPanel.classList.toggle('open', target);
   if (btnCam) btnCam.classList.toggle('active', target);
   if (!target) deselectExportCam();
@@ -2303,6 +2426,7 @@ function setExportCamEnabled(on) {
 function selectExportCam() {
   deselectLight();
   deselectImage();
+  deselectText();
   deselectModel();
   tfControls.setMode(camGizmoMode);
   tfControls.attach(exportCam);
@@ -2436,7 +2560,7 @@ const mpAdd = document.getElementById('mp-add');
 function toggleModelPanel(open) {
   const isOpen = modelPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleCamPanel(false); }
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleTextPanel(false); toggleCamPanel(false); }
   modelPanel.classList.toggle('open', target);
   if (btnModels) btnModels.classList.toggle('active', target);
   if (!target) deselectModel();
@@ -2477,6 +2601,7 @@ function selectModel(idx) {
   saveAnimUIBoundToCurrentEntry();
   deselectLight();
   deselectImage();
+  deselectText();
   deselectExportCam();
   selectedModelIdx = idx;
   loadAnimUIFromCurrentEntry();
@@ -2572,7 +2697,7 @@ if (mpAdd) {
 function toggleImagePanel(open) {
   const isOpen = imagePanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleCamPanel(false); toggleModelPanel(false); }
+  if (target) { toggleLightPanel(false); toggleTextPanel(false); toggleCamPanel(false); toggleModelPanel(false); }
   imagePanel.classList.toggle('open', target);
   if (btnImages) btnImages.classList.toggle('active', target);
   if (!target) deselectImage();
@@ -2649,6 +2774,7 @@ function selectImage(idx) {
   if (idx < 0 || idx >= userImages.length) return;
   if (selectedImageIdx === idx) return;
   deselectLight();
+  deselectText();
   deselectExportCam();
   deselectModel();
   selectedImageIdx = idx;
@@ -2814,6 +2940,378 @@ if (ipAdd) {
 }
 
 rebuildImagePanel();
+
+// ─── Text labels (canvas texture) ───
+const textPanel = document.getElementById('text-panel');
+const tpBody = document.getElementById('tp-body');
+const btnTexts = document.getElementById('btn-texts');
+const tpClose = document.getElementById('tp-close');
+const tpAdd = document.getElementById('tp-add');
+
+const userTexts = [];
+let selectedTextIdx = -1;
+let textIdCounter = 0;
+let textGizmoMode = 'translate';
+
+const TEXT_FONT_OPTIONS = [
+  'Segoe UI', 'system-ui', 'Arial', 'Georgia', 'Times New Roman',
+  'Courier New', 'Verdana', 'Trebuchet MS', 'Impact', 'Comic Sans MS',
+];
+
+function canvasFontString(sizePx, family) {
+  const q = (family && family.includes(' ')) ? `"${family}"` : (family || 'sans-serif');
+  return `600 ${sizePx}px ${q}, sans-serif`;
+}
+
+function normalizeCanvasFillColor(hex) {
+  const s = (hex != null && String(hex).trim()) ? String(hex).trim() : '#ffffff';
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+  }
+  return '#ffffff';
+}
+
+function measureLineWidth(ctx, line, fontPx) {
+  const t = line != null && line.length ? line : ' ';
+  const m = ctx.measureText(t);
+  let w = m.width;
+  if (typeof m.actualBoundingBoxLeft === 'number' && typeof m.actualBoundingBoxRight === 'number') {
+    w = Math.max(w, Math.abs(m.actualBoundingBoxRight - m.actualBoundingBoxLeft));
+  }
+  const len = t.length;
+  w = Math.max(w, len * fontPx * 0.45);
+  return w;
+}
+
+function redrawUserTextEntry(entry) {
+  const canvas = entry.canvas;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const raw = entry.text != null ? String(entry.text) : '';
+  const lines = raw.length ? raw.split(/\r?\n/) : [' '];
+  let fontPx = Math.max(12, Math.min(200, entry.fontSizePx | 0));
+  entry.fontSizePx = fontPx;
+  const pad = Math.max(10, Math.round(fontPx * 0.25));
+
+  const prevW = canvas.width;
+  const prevH = canvas.height;
+  ctx.font = canvasFontString(fontPx, entry.fontFamily);
+  let maxW = fontPx;
+  for (const line of lines) {
+    maxW = Math.max(maxW, measureLineWidth(ctx, line, fontPx));
+  }
+  const lineH = fontPx * 1.45;
+  const minW = Math.ceil(fontPx * 1.25 + pad * 2);
+  const minH = Math.ceil(lineH + pad * 2);
+  const cw = Math.max(minW, Math.min(2048, Math.ceil(maxW + pad * 2)));
+  const ch = Math.max(minH, Math.ceil(lines.length * lineH + pad * 2));
+
+  canvas.width = cw;
+  canvas.height = ch;
+  ctx.font = canvasFontString(fontPx, entry.fontFamily);
+  ctx.fillStyle = normalizeCanvasFillColor(entry.color);
+  ctx.textBaseline = 'top';
+  ctx.clearRect(0, 0, cw, ch);
+  lines.forEach((line, i) => {
+    const t = line != null && line.length ? line : ' ';
+    ctx.fillText(t, pad, pad + i * lineH);
+  });
+
+  const sizeChanged = prevW !== cw || prevH !== ch;
+  if (sizeChanged && entry.texture) {
+    entry.texture.dispose();
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    entry.texture = tex;
+    entry.mesh.material.map = tex;
+    entry.mesh.material.color.setHex(0xffffff);
+    entry.mesh.material.needsUpdate = true;
+  } else {
+    entry.texture.image = canvas;
+    entry.texture.needsUpdate = true;
+  }
+
+  const aspect = cw / Math.max(ch, 1);
+  let sc = entry.worldScale;
+  if (!(sc > 0)) sc = 1;
+  entry.worldScale = Math.max(0.15, Math.min(8, sc));
+  const h = 0.45 * entry.worldScale;
+  const wPlane = h * aspect;
+  entry.mesh.geometry.dispose();
+  entry.mesh.geometry = new THREE.PlaneGeometry(wPlane, h);
+  if (entry.previewImg) {
+    try {
+      entry.previewImg.src = canvas.toDataURL('image/png');
+    } catch (_) {}
+  }
+}
+
+function createUserText(initial = {}, opts = {}) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 4;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture, color: 0xffffff, transparent: true, side: THREE.DoubleSide, depthWrite: true,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
+  mesh.userData.isUserText = true;
+  mesh.userData.textIdx = userTexts.length;
+
+  let cx = 0, cy = 0.6, cz = 0.6;
+  if (hasAnyModel()) {
+    const box = getModelsUnionBox();
+    const center = box.getCenter(new THREE.Vector3());
+    cx = center.x + (Math.random() - 0.5) * 0.35;
+    cy = center.y + 0.15;
+    cz = box.max.z + 0.35 + Math.random() * 0.2;
+  }
+  if (initial.position) mesh.position.fromArray(initial.position);
+  else mesh.position.set(cx, cy, cz);
+  if (initial.rotation) mesh.rotation.set(initial.rotation[0], initial.rotation[1], initial.rotation[2]);
+
+  const previewImg = document.createElement('img');
+  previewImg.className = 'tx-preview';
+  previewImg.alt = '';
+
+  const entry = {
+    id: textIdCounter++,
+    mesh,
+    canvas,
+    texture,
+    previewImg,
+    text: initial.text != null ? String(initial.text) : (currentLang === 'fr' ? 'Texte' : 'Text'),
+    color: initial.color || '#ffffff',
+    fontFamily: initial.fontFamily || 'Segoe UI',
+    fontSizePx: initial.fontSizePx != null ? initial.fontSizePx : 56,
+    worldScale: initial.worldScale != null ? initial.worldScale : 1,
+  };
+  scene.add(mesh);
+  userTexts.push(entry);
+  redrawUserTextEntry(entry);
+  if (opts.skipRebuild !== true) rebuildTextPanel();
+  if (opts.select !== false) selectText(userTexts.length - 1);
+}
+
+function removeUserText(idx) {
+  if (idx < 0 || idx >= userTexts.length) return;
+  const entry = userTexts[idx];
+  if (selectedTextIdx === idx) deselectText();
+  scene.remove(entry.mesh);
+  entry.mesh.geometry.dispose();
+  entry.mesh.material.dispose();
+  entry.texture.dispose();
+  userTexts.splice(idx, 1);
+  userTexts.forEach((e, i) => { e.mesh.userData.textIdx = i; });
+  if (selectedTextIdx > idx) selectedTextIdx--;
+  else if (selectedTextIdx >= userTexts.length) selectedTextIdx = -1;
+  rebuildTextPanel();
+}
+
+function selectText(idx) {
+  if (idx < 0 || idx >= userTexts.length) return;
+  if (selectedTextIdx === idx) return;
+  deselectLight();
+  deselectImage();
+  deselectExportCam();
+  deselectModel();
+  selectedTextIdx = idx;
+  tfControls.setMode(textGizmoMode);
+  tfControls.attach(userTexts[idx].mesh);
+  rebuildTextPanel();
+}
+
+function deselectText() {
+  if (selectedTextIdx === -1) return;
+  selectedTextIdx = -1;
+  tfControls.detach();
+  rebuildTextPanel();
+}
+
+function setTextGizmoMode(mode) {
+  textGizmoMode = mode === 'rotate' ? 'rotate' : 'translate';
+  tfControls.setMode(textGizmoMode);
+  rebuildTextPanel();
+}
+
+function rebuildTextPanel() {
+  if (!tpBody) return;
+  tpBody.innerHTML = '';
+  if (userTexts.length === 0) {
+    tpBody.innerHTML = '<div style="color:#555;text-align:center;padding:20px 0;font-size:11px;">' + t('textPanel.empty') + '</div>';
+    return;
+  }
+  userTexts.forEach((entry, i) => {
+    const card = document.createElement('div');
+    card.className = 'tx-card' + (i === selectedTextIdx ? ' selected' : '');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.tx-del') || e.target.closest('textarea') || e.target.closest('select') ||
+          e.target.closest('input') || e.target.closest('.ic-mode-btn')) return;
+      selectText(i);
+    });
+
+    const hdr = document.createElement('div');
+    hdr.className = 'tx-header';
+    hdr.appendChild(entry.previewImg);
+    const title = document.createElement('div');
+    title.className = 'tx-title';
+    const preview = entry.text.split(/\r?\n/)[0] || '…';
+    title.textContent = preview.length > 42 ? preview.slice(0, 40) + '…' : preview;
+    hdr.appendChild(title);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'tx-del';
+    del.title = t('textPanel.delete');
+    del.textContent = '\u2715';
+    del.addEventListener('click', (e) => { e.stopPropagation(); removeUserText(i); });
+    hdr.appendChild(del);
+    card.appendChild(hdr);
+
+    const rowTa = document.createElement('div');
+    rowTa.className = 'tx-row';
+    rowTa.innerHTML = '<label>' + t('textPanel.content') + '</label>';
+    const ta = document.createElement('textarea');
+    ta.value = entry.text;
+    ta.addEventListener('input', () => {
+      entry.text = ta.value;
+      redrawUserTextEntry(entry);
+      const ln = entry.text.split(/\r?\n/)[0] || '…';
+      title.textContent = ln.length > 42 ? ln.slice(0, 40) + '…' : ln;
+    });
+    rowTa.appendChild(ta);
+    card.appendChild(rowTa);
+
+    const rowCol = document.createElement('div');
+    rowCol.className = 'tx-row';
+    rowCol.innerHTML = '<label>' + t('textPanel.color') + '</label>';
+    const colIn = document.createElement('input');
+    colIn.type = 'color';
+    colIn.value = /^#[0-9a-fA-F]{6}$/.test(entry.color) ? entry.color : '#ffffff';
+    colIn.addEventListener('input', () => {
+      entry.color = colIn.value;
+      redrawUserTextEntry(entry);
+    });
+    rowCol.appendChild(colIn);
+    card.appendChild(rowCol);
+
+    const rowFont = document.createElement('div');
+    rowFont.className = 'tx-row';
+    rowFont.innerHTML = '<label>' + t('textPanel.font') + '</label>';
+    const selFont = document.createElement('select');
+    TEXT_FONT_OPTIONS.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f;
+      o.textContent = f;
+      selFont.appendChild(o);
+    });
+    if (!TEXT_FONT_OPTIONS.includes(entry.fontFamily)) {
+      const o = document.createElement('option');
+      o.value = entry.fontFamily;
+      o.textContent = entry.fontFamily;
+      selFont.appendChild(o);
+    }
+    selFont.value = entry.fontFamily;
+    selFont.addEventListener('change', () => {
+      entry.fontFamily = selFont.value;
+      redrawUserTextEntry(entry);
+    });
+    rowFont.appendChild(selFont);
+    card.appendChild(rowFont);
+
+    const rowFs = document.createElement('div');
+    rowFs.className = 'tx-row';
+    rowFs.innerHTML = '<label>' + t('textPanel.fontSize') + '</label>';
+    const fsRange = document.createElement('input');
+    fsRange.type = 'range';
+    fsRange.min = '16';
+    fsRange.max = '160';
+    fsRange.step = '2';
+    fsRange.value = String(entry.fontSizePx);
+    const fsVal = document.createElement('span');
+    fsVal.className = 'tx-val';
+    fsVal.textContent = String(entry.fontSizePx);
+    fsRange.addEventListener('input', () => {
+      const v = parseInt(fsRange.value, 10);
+      entry.fontSizePx = v;
+      redrawUserTextEntry(entry);
+      fsVal.textContent = String(v);
+    });
+    rowFs.appendChild(fsRange);
+    rowFs.appendChild(fsVal);
+    card.appendChild(rowFs);
+
+    const rowSc = document.createElement('div');
+    rowSc.className = 'tx-row';
+    rowSc.innerHTML = '<label>' + t('textPanel.worldScale') + '</label>';
+    const scRange = document.createElement('input');
+    scRange.type = 'range';
+    scRange.min = '0.2';
+    scRange.max = '5';
+    scRange.step = '0.1';
+    scRange.value = String(entry.worldScale);
+    const scVal = document.createElement('span');
+    scVal.className = 'tx-val';
+    scVal.textContent = entry.worldScale.toFixed(1);
+    scRange.addEventListener('input', () => {
+      const v = parseFloat(scRange.value);
+      entry.worldScale = v;
+      redrawUserTextEntry(entry);
+      scVal.textContent = v.toFixed(1);
+    });
+    rowSc.appendChild(scRange);
+    rowSc.appendChild(scVal);
+    card.appendChild(rowSc);
+
+    if (i === selectedTextIdx) {
+      const modes = document.createElement('div');
+      modes.className = 'ic-modes';
+      const btnMove = document.createElement('button');
+      btnMove.type = 'button';
+      btnMove.className = 'ic-mode-btn' + (textGizmoMode === 'translate' ? ' active' : '');
+      btnMove.textContent = t('textPanel.move');
+      btnMove.addEventListener('click', (e) => { e.stopPropagation(); setTextGizmoMode('translate'); });
+      modes.appendChild(btnMove);
+      const btnRot = document.createElement('button');
+      btnRot.type = 'button';
+      btnRot.className = 'ic-mode-btn' + (textGizmoMode === 'rotate' ? ' active' : '');
+      btnRot.textContent = t('textPanel.rotate');
+      btnRot.addEventListener('click', (e) => { e.stopPropagation(); setTextGizmoMode('rotate'); });
+      modes.appendChild(btnRot);
+      card.appendChild(modes);
+    }
+
+    tpBody.appendChild(card);
+  });
+}
+
+function toggleTextPanel(open) {
+  if (!textPanel) return;
+  const isOpen = textPanel.classList.contains('open');
+  const target = open !== undefined ? open : !isOpen;
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleCamPanel(false); toggleModelPanel(false); }
+  textPanel.classList.toggle('open', target);
+  if (btnTexts) btnTexts.classList.toggle('active', target);
+  if (!target) deselectText();
+}
+
+if (btnTexts) btnTexts.addEventListener('click', () => toggleTextPanel());
+if (tpClose) tpClose.addEventListener('click', () => toggleTextPanel(false));
+if (tpAdd) {
+  tpAdd.addEventListener('click', () => { createUserText(); });
+}
+
+rebuildTextPanel();
 
 const loadingEl = document.getElementById('loading');
 const loadingMsg = document.getElementById('loading-msg');
@@ -3422,6 +3920,16 @@ function finishGatherProject(proj) {
     shadowReceive: e.shadowReceive,
   }));
 
+  proj.texts = userTexts.map(e => ({
+    text: e.text,
+    color: e.color,
+    fontFamily: e.fontFamily,
+    fontSizePx: e.fontSizePx,
+    worldScale: e.worldScale,
+    position: e.mesh.position.toArray(),
+    rotation: [e.mesh.rotation.x, e.mesh.rotation.y, e.mesh.rotation.z],
+  }));
+
   // Language
   proj.lang = currentLang;
 
@@ -3470,6 +3978,7 @@ async function importProject(file) {
     while (editorModels.length) removeEditorModel(0);
     while (userLights.length) removeUserLight(0);
     while (userImages.length) removeUserImage(0);
+    while (userTexts.length) removeUserText(0);
     document.getElementById('dropzone').classList.add('hidden');
 
     // Language
@@ -3607,6 +4116,21 @@ async function importProject(file) {
         });
       }
       rebuildImagePanel();
+    }
+
+    if (proj.texts && proj.texts.length) {
+      for (const tData of proj.texts) {
+        createUserText({
+          text: tData.text,
+          color: tData.color || '#ffffff',
+          fontFamily: tData.fontFamily || 'Segoe UI',
+          fontSizePx: tData.fontSizePx != null ? tData.fontSizePx : 56,
+          worldScale: tData.worldScale != null ? tData.worldScale : 1,
+          position: tData.position,
+          rotation: tData.rotation,
+        }, { select: false, skipRebuild: true });
+      }
+      rebuildTextPanel();
     }
 
     // Export camera
