@@ -1,103 +1,168 @@
-# BBModel → navigateur (GLB + viewer web)
+# BBModel Viewer
 
-Outils pour **visualiser des modèles Blockbench** (`.bbmodel`) sur le web : conversion en **GLB** (glTF 2.0 binaire) via Python, ou **affichage direct** dans le navigateur sans export intermédiaire.
+**[Français](#fr)** · **[English](#en)**
 
-## Contenu du dépôt
+---
 
-| Fichier / dossier | Rôle |
-|-------------------|------|
-| `bbmodel_to_gltf.py` | Script Python : `.bbmodel` → `.glb` ou `.gltf` + binaire |
-| `index.html` | Page web autonome : glisser-déposer un `.bbmodel` pour le voir en 3D (Three.js) |
-| `bbmodels/` | Exemples de modèles (optionnel) |
-| `old/` | Anciennes versions du convertisseur et scripts utilitaires |
+<a id="fr"></a>
 
-## Prérequis (Python)
+## Français
 
-- Python 3.10+ recommandé  
-- Dépendance : [pygltflib](https://pypi.org/project/pygltflib/)
+Éditeur web pour **voir et composer** des scènes 3D à partir de modèles Blockbench, sans installation lourde : ouvrir le fichier, importer des assets, placer les éléments, animer et exporter le résultat en image ou en projet sauvegardable.
+
+### L’éditeur (`index.html`)
+
+#### Démarrage
+
+Ouvrez `index.html` dans un navigateur récent (Chrome, Edge, Firefox, etc.). Vous pouvez travailler en ouvrant le fichier directement depuis votre disque ; un serveur local n’est pas indispensable pour l’usage courant.
+
+#### Ce que vous pouvez importer
+
+- **`.bbmodel`** — projet Blockbench ; le viewer affiche le modèle et, s’il y en a, les **animations** des os.
+- **`.glb`** — modèle 3D déjà au format glTF binaire, pour le mélanger avec d’autres éléments dans la même scène.
+- **`.bbmv`** — **projet** enregistré depuis cette page : toute la scène (plusieurs modèles, lumières, images, texte, réglages) revient telle que vous l’aviez laissée, y compris l’animation en cours de lecture sur chaque modèle.
+
+La zone d’accueil au premier lancement accepte le glisser-déposer ; les panneaux latéraux proposent aussi d’**ajouter** des modèles ou des médias.
+
+#### Composer la scène
+
+- **Modèles** — plusieurs modèles dans une même vue ; sélection, déplacement et rotation avec le gizmo (modes déplacement / rotation).
+- **Animations** — barre en bas lorsque le modèle porte des animations Blockbench : choix de l’animation, lecture / pause, curseur de temps, option pour forcer la lecture en boucle.
+- **Images** — plaquer des images dans l’espace 3D, les positionner et les mettre à l’échelle.
+- **Texte** — ajouter du texte en 3D (contenu, couleur, police, taille dans la scène).
+- **Lumières** — placer des sources lumineuses, régler couleur et intensité, ombres selon les options.
+- **Environnement** — fond (ciel), sol, grille au sol ; tout reste lisible pour travailler la mise en scène.
+- **Turntable** — rotation automatique autour de la scène, avec réglage de vitesse ; elle se coupe dès que vous manipulez la vue à la souris pour éviter les conflits.
+- **Caméra d’export** — caméra optionnelle dans la scène pour cadrer précisément les **exports PNG et GIF** ; vous pouvez aussi vous contenter de la vue « éditeur » courante.
+
+La navigation 3D classique s’applique : orbiter, zoomer, explorer la scène.
+
+#### Exporter
+
+- **Export (PNG / GIF)** — une fenêtre permet de choisir le format, une largeur maximale et un nom de fichier.  
+  - **PNG** : une image fixe, soit depuis la vue actuelle, soit depuis la caméra d’export si vous l’avez activée.  
+  - **GIF** : une séquence d’images ; vous choisissez le nombre d’images, un mode **turntable** (tour complet) ou **vue fixe**, et le délai entre les images. Si une animation est sélectionnée, elle est prise en compte dans la séquence.
+- **Exporter / importer projet (`.bbmv`)** — sauvegarde complète de la scène pour la reprendre plus tard sur cette même page (modèles inclus, placement, lumières, médias, préférences, état des animations).
+
+#### Langue
+
+Un sélecteur de langue est disponible dans l’interface ; les textes peuvent être complétés ou ajustés via les fichiers du dossier `lang/`.
+
+#### À savoir
+
+Pour le premier chargement, la page peut **télécharger depuis Internet** des bibliothèques utilisées pour l’affichage 3D et, pour le GIF, un petit module d’encodage. L’export GIF suppose en pratique que ce chargement ait réussi au moins une fois.
+
+Le projet vise les modèles **type Blockbench / cubes** ; les animations portent sur le squelette (os), pas sur tous les effets possibles dans l’éditeur Blockbench.
+
+### Script Python `bbmodel_to_gltf.py` (FR)
+
+Outil **en ligne de commande** pour convertir un fichier **`.bbmodel`** en **`.glb`** (un seul fichier) ou en **`.gltf`** (fichier texte + binaire + texture à côté), **sans** passer par le navigateur.
+
+**Prérequis** — Python **3.10+** recommandé ; bibliothèque **pygltflib**.
 
 ```bash
 pip install pygltflib
 ```
 
-## Utiliser le script Python
-
-### Conversion minimale
-
-Le fichier de sortie prend par défaut le même nom que l'entrée, avec l'extension `.glb` :
+**Lancement**
 
 ```bash
 python bbmodel_to_gltf.py chemin/vers/modele.bbmodel
 ```
 
-### Spécifier la sortie
+Sans `--output`, un fichier `.glb` est créé à côté du `.bbmodel`, avec un nom dérivé de l’entrée.
+
+| Argument | Description |
+|----------|-------------|
+| `input_file` | Chemin vers le `.bbmodel` (obligatoire). |
+| `--output` | Chemin du fichier de sortie (extension `.glb` ou `.gltf`). |
+| `--scale` | Facteur d’échelle (défaut : `1/16`, cohérent avec un rendu « blocs » / Minecraft). |
+| `--texture-name` | Nom du fichier image exporté en mode `.gltf` (ressource externe). |
+| `--linear` | Filtre de texture lissé au lieu du mode « pixel art » (plus proche voisin). |
+
+**Texture** — le script utilise en priorité une image à côté du `.bbmodel`, puis les données dans le JSON Blockbench, puis des chemins valides dans le projet. La **première texture** du projet couvre tout le maillage dans ce flux.
+
+Tout viewer ou moteur compatible **glTF 2.0** peut ouvrir le `.glb` produit.
+
+---
+
+<a id="en"></a>
+
+## English
+
+A single-page **web editor** to **view and stage** 3D scenes from Blockbench models—no heavy install: open the file, import assets, arrange everything, play animations, and export stills, GIFs, or a full project you can reopen later.
+
+### The editor (`index.html`)
+
+#### Getting started
+
+Open `index.html` in a recent browser (Chrome, Edge, Firefox, etc.). You can open the file straight from disk; a local server is not required for typical use.
+
+#### What you can import
+
+- **`.bbmodel`** — Blockbench project; the viewer shows the model and any **bone** animations.
+- **`.glb`** — binary glTF model to combine with other content in the same scene.
+- **`.bbmv`** — **project** saved from this page: the whole scene (multiple models, lights, images, text, settings) comes back as you left it, including playback state per model.
+
+The welcome area supports drag-and-drop; side panels also let you **add** models or media.
+
+#### Building the scene
+
+- **Models** — several models in one view; select, move, and rotate with the gizmo (translate / rotate modes).
+- **Animations** — bottom bar when the model has Blockbench animations: pick an animation, play/pause, scrub time, optional forced looping.
+- **Images** — place images in 3D space, position and scale them.
+- **Text** — add 3D text (content, color, font, size in the scene).
+- **Lights** — place lights, set color and intensity, shadows where supported.
+- **Environment** — sky/background, ground, ground grid for a clear stage.
+- **Turntable** — auto-rotation around the scene with speed control; it turns off when you orbit with the mouse to avoid fighting the controls.
+- **Export camera** — optional in-scene camera to frame **PNG and GIF** exports precisely; you can also use the current editor view.
+
+Standard 3D navigation: orbit, zoom, explore.
+
+#### Export
+
+- **Export (PNG / GIF)** — choose format, max width, and filename.  
+  - **PNG** — one still, either the current editor view or the export camera if enabled.  
+  - **GIF** — image sequence; set frame count, **turntable** (full spin) or **fixed** camera, and delay between frames. If an animation is selected, it is included in the sequence.
+- **Export / import project (`.bbmv`)** — full scene snapshot to reopen later on this same page (embedded models, transforms, lights, media, preferences, animation state).
+
+#### Language
+
+A language selector is in the UI; strings live under `lang/` for edits or additions.
+
+#### Notes
+
+On first load, the page may **download** 3D libraries from the internet and, for GIFs, a small encoder. GIF export expects that load to succeed at least once.
+
+The tool targets **Blockbench-style / cube** models; animations cover the bone rig, not every Blockbench effect.
+
+
+### Python script `bbmodel_to_gltf.py` (EN)
+
+**Command-line** tool to turn a **`.bbmodel`** into **`.glb`** (single file) or **`.gltf`** (JSON + bin + sidecar texture) **without** the browser.
+
+**Requirements** — Python **3.10+** recommended; **pygltflib**.
 
 ```bash
-python bbmodel_to_gltf.py modele.bbmodel --output export/modele.glb
+pip install pygltflib
 ```
 
-Pour un `.gltf` séparé + `.bin` + texture PNG à côté :
+**Run**
 
 ```bash
-python bbmodel_to_gltf.py modele.bbmodel --output export/modele.gltf
+python bbmodel_to_gltf.py path/to/model.bbmodel
 ```
 
-### Options utiles
+Without `--output`, a `.glb` is written next to the `.bbmodel` with a derived name.
 
-| Option | Description |
-|--------|-------------|
-| `--scale FACTEUR` | Échelle appliquée aux positions (défaut : `0.0625`, soit 1/16, adapté au style Minecraft) |
-| `--texture-name nom.png` | Nom du fichier image référencé en mode `.gltf` (externe) |
-| `--linear` | Filtre de texture linéaire au lieu du plus proche voisin |
+| Argument | Description |
+|----------|-------------|
+| `input_file` | Path to the `.bbmodel` (required). |
+| `--output` | Output path (`.glb` or `.gltf`). |
+| `--scale` | Global scale factor (default `1/16`, block-style / Minecraft-friendly). |
+| `--texture-name` | Image filename when exporting external `.gltf` assets. |
+| `--linear` | Linear texture filtering instead of nearest-neighbor (“pixel art”). |
 
-### Texture
+**Texture** — the script looks for an image beside the `.bbmodel`, then embedded data in the Blockbench JSON, then valid paths in the project. The **first** project texture drives the whole mesh in this pipeline.
 
-Le script charge la texture dans cet ordre de priorité :
-
-1. Fichier image à côté du `.bbmodel` (même nom que dans `textures[0]`, ou `.png` / `.jpg` dérivé du nom)
-2. Champ `source` en `data:image/...;base64,...` dans le JSON
-3. Chemins `relative_path` ou `path` s'ils pointent vers un fichier existant
-
-La **première entrée** du tableau `textures` du `.bbmodel` est utilisée pour tout le mesh (modèles multi-textures : une seule image est embarquée pour l'instant).
-
-### Comportement du GLB produit
-
-- Géométrie et UV alignées sur la logique Blockbench (`setShape` / `updateUV`)
-- Transparence des textures : matériau en mode **MASK** avec `alphaCutoff` pour éviter les zones transparentes affichées en gris
-- Hitboxes / cubes masqués : heuristique sur le nom (`hitbox`, `collision`, `_hb`) et champs `export` / `visibility`
-
-## Utiliser l'interface web (`index.html`)
-
-Aucun serveur n'est obligatoire : ouvrez le fichier dans un navigateur récent (Chrome, Edge, Firefox).
-
-1. Double-cliquez sur `index.html` ou faites **Fichier → Ouvrir** dans le navigateur.
-2. Glissez un fichier `.bbmodel` sur la zone, ou utilisez **Ouvrir .bbmodel**.
-3. Le modèle s'affiche en 3D (orbite : clic pour tourner, molette pour zoomer).
-4. **Turntable** : après chargement, une rotation automatique autour du modèle est activée. Utilisez le bouton *Turntable* pour l'arrêter ou la relancer, le curseur *Vitesse* pour régler la vitesse. Dès que vous commencez à faire tourner la vue à la souris, le turntable se coupe (évite le conflit avec l'orbite).
-5. **GIF** : bouton *GIF* → **Caméra** : *Turntable* (tour 360° sur le nombre d'images) ou *Vue fixe* (garde la position actuelle de la caméra). Réglages : nombre d'images, pause entre images (ms), largeur max. Si une **animation** est sélectionnée dans la barre du bas, elle est **rejouée depuis le début** sur chaque image du GIF (la pause entre images règle la vitesse) ; avec *-- aucune --*, le modèle reste en pose de repos. Fichier téléchargé du type `nom_turntable_idle.gif` ou `nom_fixe_walk.gif`. L'encodeur [gifenc](https://github.com/mattdesl/gifenc) est chargé depuis un CDN (connexion Internet requise).
-6. **Fond** : sélecteur de couleur + pastilles de préréglages pour la couleur du ciel 3D. **Grille** : affiche ou masque la grille au sol (état et couleur de fond sont mémorisés dans le navigateur via `localStorage`).
-7. **Animations** : si le `.bbmodel` contient des animations, une barre apparait en bas de l'écran avec un sélecteur, lecture/pause, timeline et affichage du temps. Channels supportés : **rotation**, **position**, **scale** (bones). Interpolations **linéaire** et **Catmull-Rom**. L'animation choisie dans cette barre est utilisée pour l'export GIF (voir point 5).
-
-La page charge **Three.js** et les contrôles depuis un CDN (connexion Internet requise au premier chargement). Elle lit le JSON du `.bbmodel` et la texture embarquée en base64 comme le script Python.
-
-### Limitations du viewer web
-
-- Même logique de texture que le script : **première texture** du projet pour tout le mesh.
-- Pas d'export GLB depuis la page (visualisation uniquement).
-- Animations : seuls les bones sont animés (pas les effets de particules ni les commandes).
-
-## Visualiser un GLB ailleurs
-
-Une fois le fichier généré par Python, vous pouvez l'ouvrir avec :
-
-- [https://gltf-viewer.donmccurdy.com](https://gltf-viewer.donmccurdy.com)  
-- Blender (Import glTF 2.0)  
-- Tout moteur ou viewer compatible glTF 2.0  
-
-## Référence Blockbench
-
-Pour éditer les `.bbmodel` : [https://web.blockbench.net](https://web.blockbench.net)
-
-## Licence
-
-Précisez ici la licence de votre choix si vous publiez le dépôt.
+Any **glTF 2.0** viewer or engine can open the resulting `.glb`.
