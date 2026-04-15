@@ -285,6 +285,50 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .img-card .ic-mode-btn.active {
   background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
 }
+
+#cam-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 280px; z-index: 16;
+  background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: none; flex-direction: column; overflow: hidden; font-size: 12px;
+}
+#cam-panel.open { display: flex; }
+#cam-panel .cp-head {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#cam-panel .cp-head h3 { font-size: 13px; font-weight: 700; color: #b8c0ff; margin: 0; }
+#cam-panel .cp-close {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+#cam-panel .cp-close:hover { color: #fff; }
+#cam-panel .cp-body { flex: 1; overflow-y: auto; padding: 14px; }
+#cam-panel .cp-hint {
+  padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; color: #555; line-height: 1.5;
+}
+.cp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cp-row label { color: #999; font-size: 11px; min-width: 52px; }
+.cp-row input[type="range"] { flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 0; }
+.cp-row .cp-val { color: #aaa; font-size: 10px; min-width: 32px; text-align: right; }
+.cp-row input[type="checkbox"] { accent-color: #7c8aff; cursor: pointer; }
+.cp-row .cp-chk-label { color: #aaa; font-size: 12px; cursor: pointer; user-select: none; }
+.cp-modes { display: flex; gap: 4px; margin-bottom: 10px; }
+.cp-mode-btn {
+  flex: 1; padding: 5px 0; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: #999; font-size: 11px; cursor: pointer;
+  text-align: center; transition: all 0.15s;
+}
+.cp-mode-btn:hover { background: rgba(255,255,255,0.08); color: #ccc; }
+.cp-mode-btn.active {
+  background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
+}
+.cp-snap-btn {
+  width: 100%; padding: 7px 0; border-radius: 6px; border: 1px solid rgba(124,138,255,0.35);
+  background: rgba(124,138,255,0.08); color: #b0b8ff; font-size: 12px;
+  cursor: pointer; text-align: center; margin-bottom: 10px; transition: all 0.15s;
+}
+.cp-snap-btn:hover { background: rgba(124,138,255,0.18); border-color: #7c8aff; }
 #lang-select {
   padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.06); color: #ccc; font-size: 11px; cursor: pointer;
@@ -305,6 +349,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   <button type="button" class="btn" id="btn-env" data-i18n="toolbar.env" data-i18n-title="toolbar.envTitle" title="Fond, sol et grille">Environnement</button>
   <button type="button" class="btn" id="btn-images" data-i18n="toolbar.images" data-i18n-title="toolbar.imagesTitle" title="Ajouter et positionner des images">Images</button>
   <button type="button" class="btn" id="btn-lights" data-i18n="toolbar.lights" data-i18n-title="toolbar.lightsTitle" title="Gérer les sources de lumière">Lumières</button>
+  <button type="button" class="btn" id="btn-cam" data-i18n="toolbar.camera" data-i18n-title="toolbar.cameraTitle" title="Caméra d'export GIF">🎬 Caméra</button>
   <span class="spacer"></span>
   <div class="toolbar-ctrl" id="turntable-wrap" data-i18n-title="toolbar.turntableTitle" title="Rotation automatique autour du modele">
     <button type="button" class="btn" id="btn-turntable" data-i18n="toolbar.turntable">Turntable</button>
@@ -374,6 +419,14 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           </label>
         </div>
       </div>
+    </div>
+    <div id="cam-panel">
+      <div class="cp-head">
+        <h3 data-i18n="camPanel.title">Caméra d'export</h3>
+        <button type="button" class="cp-close" id="cp-close" data-i18n-title="camPanel.close" title="Fermer">×</button>
+      </div>
+      <div class="cp-body" id="cp-body"></div>
+      <div class="cp-hint" data-i18n="camPanel.hint">Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.</div>
     </div>
     <div id="image-panel">
       <div class="ip-head">
@@ -532,6 +585,17 @@ const I18N_DATA = {
     'error.glbFailed': 'La conversion GLB a échoué ; affichage direct du maillage.\n',
     'error.loading': 'Erreur lors du chargement : ',
     'error.glbUnexpected': 'Export GLB : résultat inattendu',
+    'toolbar.camera': '🎬 Caméra',
+    'toolbar.cameraTitle': 'Caméra d\'export GIF',
+    'camPanel.title': 'Caméra d\'export',
+    'camPanel.close': 'Fermer',
+    'camPanel.enable': 'Activer la caméra d\'export',
+    'camPanel.fov': 'Champ de vision',
+    'camPanel.move': 'Déplacer',
+    'camPanel.rotate': 'Tourner',
+    'camPanel.snap': 'Capturer la vue actuelle',
+    'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
+    'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Ajouter et positionner des images dans la scène',
     'imagePanel.title': 'Images',
@@ -543,6 +607,7 @@ const I18N_DATA = {
     'imagePanel.scale': 'Taille',
     'imagePanel.move': 'Déplacer',
     'imagePanel.rotate': 'Tourner',
+    'imagePanel.resize': 'Redimensionner',
     'imagePanel.delete': 'Supprimer',
     'imagePanel.shadow': 'Ombre',
     'imagePanel.receiveShadow': 'Recevoir',
@@ -618,6 +683,28 @@ const I18N_DATA = {
     'error.glbFailed': 'GLB conversion failed; displaying raw mesh.\n',
     'error.loading': 'Loading error: ',
     'error.glbUnexpected': 'GLB export: unexpected result',
+    'toolbar.camera': '🎬 Caméra',
+    'toolbar.cameraTitle': 'Caméra d\'export GIF',
+    'camPanel.title': 'Caméra d\'export',
+    'camPanel.close': 'Fermer',
+    'camPanel.enable': 'Activer la caméra d\'export',
+    'camPanel.fov': 'Champ de vision',
+    'camPanel.move': 'Déplacer',
+    'camPanel.rotate': 'Tourner',
+    'camPanel.snap': 'Capturer la vue actuelle',
+    'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
+    'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
+    'toolbar.camera': '🎬 Camera',
+    'toolbar.cameraTitle': 'GIF export camera',
+    'camPanel.title': 'Export camera',
+    'camPanel.close': 'Close',
+    'camPanel.enable': 'Enable export camera',
+    'camPanel.fov': 'Field of view',
+    'camPanel.move': 'Move',
+    'camPanel.rotate': 'Rotate',
+    'camPanel.snap': 'Capture current view',
+    'camPanel.hint': 'Enable the camera, position it in the scene, then export a GIF. The GIF view will match this camera.',
+    'camPanel.disabled': 'Camera disabled — GIF will use the editor view.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Add and position images in the scene',
     'imagePanel.title': 'Images',
@@ -629,6 +716,7 @@ const I18N_DATA = {
     'imagePanel.scale': 'Scale',
     'imagePanel.move': 'Move',
     'imagePanel.rotate': 'Rotate',
+    'imagePanel.resize': 'Resize',
     'imagePanel.delete': 'Delete',
     'imagePanel.shadow': 'Shadow',
     'imagePanel.receiveShadow': 'Receive',
@@ -697,7 +785,7 @@ function loadLang(lang) {
   currentLang = lang;
   try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
   applyI18nToDom();
-  if (i18nReady) { rebuildLightPanel(); rebuildImagePanel(); refreshDynamicTexts(); }
+  if (i18nReady) { rebuildLightPanel(); rebuildCamPanel(); rebuildImagePanel(); refreshDynamicTexts(); }
 }
 
 {
@@ -1430,6 +1518,7 @@ const btnEnv = document.getElementById('btn-env');
 function toggleEnvPanel(open) {
   const isOpen = envPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); if (typeof toggleCamPanel === 'function') toggleCamPanel(false); }
   envPanel.classList.toggle('open', target);
   if (btnEnv) btnEnv.classList.toggle('active', target);
 }
@@ -1486,7 +1575,7 @@ tfControls.addEventListener('objectChange', () => {
 function toggleLightPanel(open) {
   const isOpen = lightPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) toggleImagePanel(false);
+  if (target) { toggleImagePanel(false); toggleCamPanel(false); }
   lightPanel.classList.toggle('open', target);
   if (btnLights) btnLights.classList.toggle('active', target);
   if (!target) deselectLight();
@@ -1545,6 +1634,7 @@ function selectLight(idx) {
   if (idx < 0 || idx >= userLights.length) return;
   if (selectedLightIdx === idx) return;
   deselectImage();
+  deselectExportCam();
   selectedLightIdx = idx;
   tfControls.setMode('translate');
   const entry = userLights[idx];
@@ -1716,6 +1806,146 @@ rebuildLightPanel();
 i18nReady = true;
 
 
+// ─── Export Camera ───
+const camPanel = document.getElementById('cam-panel');
+const cpBody = document.getElementById('cp-body');
+const btnCam = document.getElementById('btn-cam');
+const cpClose = document.getElementById('cp-close');
+
+let exportCamEnabled = false;
+const exportCam = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 100);
+exportCam.position.set(2, 1.5, 3);
+exportCam.lookAt(0, 0.5, 0);
+scene.add(exportCam);
+
+const exportCamHelper = new THREE.CameraHelper(exportCam);
+exportCamHelper.visible = false;
+scene.add(exportCamHelper);
+
+let camGizmoMode = 'translate';
+
+function toggleCamPanel(open) {
+  const isOpen = camPanel.classList.contains('open');
+  const target = open !== undefined ? open : !isOpen;
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); }
+  camPanel.classList.toggle('open', target);
+  if (btnCam) btnCam.classList.toggle('active', target);
+  if (!target) deselectExportCam();
+}
+
+if (btnCam) btnCam.addEventListener('click', () => toggleCamPanel());
+if (cpClose) cpClose.addEventListener('click', () => toggleCamPanel(false));
+
+function setExportCamEnabled(on) {
+  exportCamEnabled = on;
+  exportCamHelper.visible = on;
+  if (on) {
+    selectExportCam();
+  } else {
+    deselectExportCam();
+  }
+  rebuildCamPanel();
+}
+
+function selectExportCam() {
+  deselectLight();
+  deselectImage();
+  tfControls.setMode(camGizmoMode);
+  tfControls.attach(exportCam);
+}
+
+function deselectExportCam() {
+  if (tfControls.object === exportCam) tfControls.detach();
+}
+
+function snapExportCamToView() {
+  exportCam.position.copy(camera.position);
+  exportCam.rotation.copy(camera.rotation);
+  exportCam.fov = camera.fov;
+  exportCam.updateProjectionMatrix();
+  exportCamHelper.update();
+  rebuildCamPanel();
+}
+
+function setCamGizmoMode(mode) {
+  camGizmoMode = mode;
+  tfControls.setMode(mode);
+  rebuildCamPanel();
+}
+
+function updateExportCamFov(val) {
+  exportCam.fov = val;
+  exportCam.updateProjectionMatrix();
+  exportCamHelper.update();
+}
+
+function rebuildCamPanel() {
+  if (!cpBody) return;
+  cpBody.innerHTML = '';
+
+  const rowEn = document.createElement('div');
+  rowEn.className = 'cp-row';
+  const chk = document.createElement('input');
+  chk.type = 'checkbox';
+  chk.checked = exportCamEnabled;
+  chk.addEventListener('change', () => setExportCamEnabled(chk.checked));
+  rowEn.appendChild(chk);
+  const chkLbl = document.createElement('span');
+  chkLbl.className = 'cp-chk-label';
+  chkLbl.textContent = t('camPanel.enable');
+  chkLbl.addEventListener('click', () => { chk.checked = !chk.checked; setExportCamEnabled(chk.checked); });
+  rowEn.appendChild(chkLbl);
+  cpBody.appendChild(rowEn);
+
+  if (!exportCamEnabled) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'color:#555;text-align:center;padding:16px 0;font-size:11px;';
+    hint.textContent = t('camPanel.disabled');
+    cpBody.appendChild(hint);
+    return;
+  }
+
+  const snapBtn = document.createElement('button');
+  snapBtn.className = 'cp-snap-btn';
+  snapBtn.textContent = t('camPanel.snap');
+  snapBtn.addEventListener('click', snapExportCamToView);
+  cpBody.appendChild(snapBtn);
+
+  const rowFov = document.createElement('div');
+  rowFov.className = 'cp-row';
+  rowFov.innerHTML = '<label>' + t('camPanel.fov') + '</label>';
+  const fovRange = document.createElement('input');
+  fovRange.type = 'range'; fovRange.min = '15'; fovRange.max = '120'; fovRange.step = '1';
+  fovRange.value = String(Math.round(exportCam.fov));
+  const fovVal = document.createElement('span');
+  fovVal.className = 'cp-val';
+  fovVal.textContent = Math.round(exportCam.fov) + '\u00b0';
+  fovRange.addEventListener('input', () => {
+    const v = parseInt(fovRange.value, 10);
+    updateExportCamFov(v);
+    fovVal.textContent = v + '\u00b0';
+  });
+  rowFov.appendChild(fovRange);
+  rowFov.appendChild(fovVal);
+  cpBody.appendChild(rowFov);
+
+  const modes = document.createElement('div');
+  modes.className = 'cp-modes';
+  const btnMove = document.createElement('button');
+  btnMove.className = 'cp-mode-btn' + (camGizmoMode === 'translate' ? ' active' : '');
+  btnMove.textContent = t('camPanel.move');
+  btnMove.addEventListener('click', () => { setCamGizmoMode('translate'); selectExportCam(); });
+  modes.appendChild(btnMove);
+  const btnRot = document.createElement('button');
+  btnRot.className = 'cp-mode-btn' + (camGizmoMode === 'rotate' ? ' active' : '');
+  btnRot.textContent = t('camPanel.rotate');
+  btnRot.addEventListener('click', () => { setCamGizmoMode('rotate'); selectExportCam(); });
+  modes.appendChild(btnRot);
+  cpBody.appendChild(modes);
+}
+
+rebuildCamPanel();
+
 // ─── Image Editor ───
 const imagePanel = document.getElementById('image-panel');
 const ipBody = document.getElementById('ip-body');
@@ -1731,7 +1961,7 @@ let currentGizmoMode = 'translate';
 function toggleImagePanel(open) {
   const isOpen = imagePanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) toggleLightPanel(false);
+  if (target) { toggleLightPanel(false); toggleCamPanel(false); }
   imagePanel.classList.toggle('open', target);
   if (btnImages) btnImages.classList.toggle('active', target);
   if (!target) deselectImage();
@@ -1808,6 +2038,7 @@ function selectImage(idx) {
   if (idx < 0 || idx >= userImages.length) return;
   if (selectedImageIdx === idx) return;
   deselectLight();
+  deselectExportCam();
   selectedImageIdx = idx;
   const entry = userImages[idx];
   tfControls.setMode(currentGizmoMode);
@@ -1948,6 +2179,11 @@ function rebuildImagePanel() {
       btnRot.textContent = t('imagePanel.rotate');
       btnRot.addEventListener('click', (e) => { e.stopPropagation(); setImageGizmoMode('rotate'); });
       modes.appendChild(btnRot);
+      const btnScl = document.createElement('button');
+      btnScl.className = 'ic-mode-btn' + (currentGizmoMode === 'scale' ? ' active' : '');
+      btnScl.textContent = t('imagePanel.resize');
+      btnScl.addEventListener('click', (e) => { e.stopPropagation(); setImageGizmoMode('scale'); });
+      modes.appendChild(btnScl);
       card.appendChild(modes);
     }
 
@@ -2038,13 +2274,19 @@ async function exportViewerGif() {
   setTurntable(false);
   controls.enabled = false;
 
-  // Hide light helpers & gizmo during export
+  // Hide light helpers, camera helper & gizmo during export
   const helperWasVisible = userLights.map(e => e.helper.visible);
   userLights.forEach(e => { e.helper.visible = false; });
+  const camHelperWas = exportCamHelper.visible;
+  exportCamHelper.visible = false;
   const gizmoWasAttached = !!tfControls.object;
   if (gizmoWasAttached) tfControls.detach();
 
   const delaySec = delayMs / 1000;
+  const useExpCam = exportCamEnabled;
+  const renderCam = useExpCam ? exportCam : camera;
+  const expCamPosSaved = useExpCam ? exportCam.position.clone() : null;
+  const expCamRotSaved = useExpCam ? exportCam.rotation.clone() : null;
 
   try {
     const { GIFEncoder, quantize, applyPalette } = await import(
@@ -2056,11 +2298,13 @@ async function exportViewerGif() {
     const expH = Math.round(expW / aspect);
 
     renderer.setSize(expW, expH, true);
-    camera.aspect = expW / expH;
-    camera.updateProjectionMatrix();
+    renderCam.aspect = expW / expH;
+    renderCam.updateProjectionMatrix();
 
-    const offset = new THREE.Vector3().subVectors(prevPos, prevTarget);
-    const sph = new THREE.Spherical().setFromVector3(offset);
+    const expCamStart = useExpCam
+      ? new THREE.Vector3().subVectors(exportCam.position, prevTarget)
+      : new THREE.Vector3().subVectors(prevPos, prevTarget);
+    const sph = new THREE.Spherical().setFromVector3(expCamStart);
     const startTheta = sph.theta;
 
     const gif = GIFEncoder();
@@ -2077,13 +2321,14 @@ async function exportViewerGif() {
 
       if (useTurntable) {
         sph.theta = startTheta + (Math.PI * 2 * i) / numFrames;
-        camera.position.setFromSpherical(sph).add(prevTarget);
-      } else {
+        renderCam.position.setFromSpherical(sph).add(prevTarget);
+        renderCam.lookAt(prevTarget);
+      } else if (!useExpCam) {
         camera.position.copy(prevPos);
+        camera.lookAt(prevTarget);
       }
-      camera.lookAt(prevTarget);
       controls.update();
-      renderer.render(scene, camera);
+      renderer.render(scene, renderCam);
 
       const bufW = renderer.domElement.width;
       const bufH = renderer.domElement.height;
@@ -2129,12 +2374,19 @@ async function exportViewerGif() {
     camera.aspect = prevSize.x / prevSize.y;
     camera.updateProjectionMatrix();
     camera.position.copy(prevPos);
+    if (useExpCam) {
+      exportCam.position.copy(expCamPosSaved);
+      exportCam.rotation.copy(expCamRotSaved);
+      exportCam.aspect = 16 / 9;
+      exportCam.updateProjectionMatrix();
+    }
     controls.target.copy(prevTarget);
     controls.enabled = true;
     controls.update();
 
-    // Restore light helpers & gizmo
+    // Restore light helpers, cam helper & gizmo
     userLights.forEach((e, i) => { e.helper.visible = helperWasVisible[i] ?? true; });
+    exportCamHelper.visible = camHelperWas;
     if (gizmoWasAttached && selectedLightIdx >= 0 && selectedLightIdx < userLights.length) {
       tfControls.attach(userLights[selectedLightIdx].helper);
     }
@@ -2181,6 +2433,10 @@ function animate() {
   requestAnimationFrame(animate);
   tickAnimation();
   controls.update();
+  if (exportCamHelper.visible) {
+    exportCam.updateMatrixWorld();
+    exportCamHelper.update();
+  }
   renderer.render(scene, camera);
 }
 animate();
