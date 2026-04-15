@@ -751,6 +751,8 @@ const I18N_DATA = {
     'lightPanel.intensity': 'Intensité',
     'lightPanel.shadow': 'Ombre',
     'lightPanel.castShadow': 'Projeter',
+    'lightPanel.shadowSmooth': 'Ombres douces',
+    'lightPanel.shadowSmoothTitle': 'Mode doux : flou de pénombre (rayon d’ombre) + filtre PCF + carte d’ombre plus grande. Mode net : bords durs (basic). S’applique aux lumières qui projettent une ombre.',
     'lightPanel.delete': 'Supprimer',
     'gif.title': 'Exporter un GIF',
     'gif.camera': 'Caméra',
@@ -898,6 +900,8 @@ const I18N_DATA = {
     'lightPanel.intensity': 'Intensity',
     'lightPanel.shadow': 'Shadow',
     'lightPanel.castShadow': 'Cast',
+    'lightPanel.shadowSmooth': 'Soft shadows',
+    'lightPanel.shadowSmoothTitle': 'Soft mode: wider penumbra (shadow radius), PCF soft filtering, higher shadow map size. Hard mode: crisp edges (basic). Applies to lights that cast shadows.',
     'lightPanel.delete': 'Delete',
     'gif.title': 'Export a GIF',
     'gif.camera': 'Camera',
@@ -1874,7 +1878,26 @@ renderer.setSize(vs.w, vs.h);
 renderer.setClearColor(0x1a1a2e);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = false;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const userLights = [];
+let shadowSmooth = true;
+function applyShadowMapSoftness() {
+  renderer.shadowMap.type = shadowSmooth ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
+  renderer.shadowMap.needsUpdate = true;
+  const mapSz = shadowSmooth ? 2048 : 1024;
+  const penumbra = shadowSmooth ? 14 : 1;
+  for (const e of userLights) {
+    const sh = e.light.shadow;
+    sh.radius = penumbra;
+    if (sh.mapSize.width !== mapSz || sh.mapSize.height !== mapSz) {
+      if (sh.map) {
+        sh.map.dispose();
+        sh.map = null;
+      }
+      sh.mapSize.set(mapSz, mapSz);
+    }
+  }
+}
+applyShadowMapSoftness();
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -2085,6 +2108,7 @@ function refreshShadowSystem() {
   const anyShadow = userLights.some(e => e.castShadow);
   renderer.shadowMap.enabled = anyShadow;
   shadowGround.visible = anyShadow;
+  applyShadowMapSoftness();
   for (const e of editorModels) {
     e.root.traverse(o => {
       if (o.isMesh) o.castShadow = anyShadow;
@@ -2147,7 +2171,6 @@ const btnLights = document.getElementById('btn-lights');
 const lpClose = document.getElementById('lp-close');
 const lpAdd = document.getElementById('lp-add');
 
-const userLights = [];
 let selectedLightIdx = -1;
 let lightIdCounter = 0;
 
@@ -2202,6 +2225,8 @@ function createUserLight(opts) {
 
   const entry = { id, light, helper, color, intensity, castShadow };
   userLights.push(entry);
+  if (castShadow) refreshShadowSystem();
+  else applyShadowMapSoftness();
   rebuildLightPanel();
   selectLight(userLights.length - 1);
   return entry;
@@ -2275,6 +2300,28 @@ function rebuildLightPanel() {
     lpBody.innerHTML = `<div style="color:#555;text-align:center;padding:20px 0;font-size:11px;">${t('lightPanel.empty')}</div>`;
     return;
   }
+  const globalCard = document.createElement('div');
+  globalCard.className = 'light-card';
+  globalCard.style.cursor = 'default';
+  const globalSh = document.createElement('div');
+  globalSh.className = 'lc-row';
+  globalSh.style.marginBottom = '0';
+  const gLabel = document.createElement('label');
+  gLabel.textContent = t('lightPanel.shadowSmooth');
+  gLabel.title = t('lightPanel.shadowSmoothTitle');
+  globalSh.appendChild(gLabel);
+  const smoothCheck = document.createElement('input');
+  smoothCheck.type = 'checkbox';
+  smoothCheck.checked = shadowSmooth;
+  smoothCheck.title = t('lightPanel.shadowSmoothTitle');
+  smoothCheck.addEventListener('change', () => {
+    shadowSmooth = smoothCheck.checked;
+    refreshShadowSystem();
+  });
+  globalSh.appendChild(smoothCheck);
+  globalCard.appendChild(globalSh);
+  lpBody.appendChild(globalCard);
+
   userLights.forEach((entry, i) => {
     const card = document.createElement('div');
     card.className = 'light-card' + (i === selectedLightIdx ? ' selected' : '');
@@ -4127,6 +4174,7 @@ function finishGatherProject(proj) {
     position: e.helper.position.toArray(),
     castShadow: e.castShadow,
   }));
+  proj.shadowSmooth = shadowSmooth;
 
   // Images
   proj.images = userImages.map(e => ({
@@ -4414,7 +4462,9 @@ async function importProject(file) {
       if (sInput) sInput.value = String(proj.turntableSpeed);
     }
 
+    if (proj.shadowSmooth !== undefined) shadowSmooth = !!proj.shadowSmooth;
     refreshShadowSystem();
+    rebuildLightPanel();
     onViewerResize();
 
   } catch (err) {
