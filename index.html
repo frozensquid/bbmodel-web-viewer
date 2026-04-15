@@ -11,10 +11,10 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .viewer-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: #0d0d12; position: relative; }
 #viewer { flex: 1 1 auto; min-height: 200px; position: relative; width: 100%; }
 #viewer canvas { display: block; position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
-#viewer .watermark {
-  position: absolute; bottom: 10px; right: 14px; z-index: 5;
-  font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; font-weight: 800;
-  letter-spacing: 1.5px; color: rgba(255,255,255,0.12); pointer-events: none; user-select: none;
+#watermark {
+  position: absolute; bottom: 56px; right: 16px; z-index: 10;
+  font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  color: #555; line-height: 1.5; pointer-events: none; user-select: none;
 }
 
 #toolbar {
@@ -225,6 +225,66 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 }
 .ep-toggle input[type="checkbox"] { accent-color: #7c8aff; cursor: pointer; }
 .ep-toggle span { user-select: none; }
+
+#image-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 300px; z-index: 16;
+  background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: none; flex-direction: column; overflow: hidden; font-size: 12px;
+}
+#image-panel.open { display: flex; }
+#image-panel .ip-head {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#image-panel .ip-head h3 { font-size: 13px; font-weight: 700; color: #b8c0ff; margin: 0; }
+#image-panel .ip-close {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+#image-panel .ip-close:hover { color: #fff; }
+#image-panel .ip-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+#image-panel .ip-add {
+  margin: 0 14px 12px; padding: 8px; border-radius: 7px; border: 1px dashed rgba(124,138,255,0.4);
+  background: rgba(124,138,255,0.06); color: #b0b8ff; font-size: 12px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+#image-panel .ip-add:hover { background: rgba(124,138,255,0.15); border-color: #7c8aff; }
+#image-panel .ip-hint {
+  padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; color: #555; line-height: 1.5;
+}
+.img-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; transition: border-color 0.15s; cursor: pointer;
+}
+.img-card.selected { border-color: rgba(124,138,255,0.6); background: rgba(124,138,255,0.08); }
+.img-card .ic-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.img-card .ic-thumb {
+  width: 36px; height: 36px; border-radius: 4px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; background: #000;
+}
+.img-card .ic-name {
+  font-weight: 600; color: #dde; font-size: 11px; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.img-card .ic-del {
+  background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.img-card .ic-del:hover { color: #f66; }
+.img-card .ic-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.img-card .ic-row label { color: #999; font-size: 11px; min-width: 52px; }
+.img-card .ic-row input[type="range"] { flex: 1; accent-color: #7c8aff; cursor: pointer; min-width: 0; }
+.img-card .ic-row .ic-val { color: #aaa; font-size: 10px; min-width: 28px; text-align: right; }
+.img-card .ic-modes { display: flex; gap: 4px; margin-top: 4px; }
+.img-card .ic-mode-btn {
+  flex: 1; padding: 4px 0; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: #999; font-size: 11px; cursor: pointer;
+  text-align: center; transition: all 0.15s;
+}
+.img-card .ic-mode-btn:hover { background: rgba(255,255,255,0.08); color: #ccc; }
+.img-card .ic-mode-btn.active {
+  background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
+}
 #lang-select {
   padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.06); color: #ccc; font-size: 11px; cursor: pointer;
@@ -243,6 +303,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   <span id="model-name" data-i18n="toolbar.noModel">Aucun modèle</span>
   <span class="sep"></span>
   <button type="button" class="btn" id="btn-env" data-i18n="toolbar.env" data-i18n-title="toolbar.envTitle" title="Fond, sol et grille">Environnement</button>
+  <button type="button" class="btn" id="btn-images" data-i18n="toolbar.images" data-i18n-title="toolbar.imagesTitle" title="Ajouter et positionner des images">Images</button>
   <button type="button" class="btn" id="btn-lights" data-i18n="toolbar.lights" data-i18n-title="toolbar.lightsTitle" title="Gérer les sources de lumière">Lumières</button>
   <span class="spacer"></span>
   <div class="toolbar-ctrl" id="turntable-wrap" data-i18n-title="toolbar.turntableTitle" title="Rotation automatique autour du modele">
@@ -266,7 +327,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 
 <main class="app-main">
   <section class="viewer-section">
-    <div id="viewer" data-i18n-aria="viewer.aria" aria-label="Vue 3D du modèle converti"><span class="watermark">BBMV</span></div>
+    <div id="viewer" data-i18n-aria="viewer.aria" aria-label="Vue 3D du modèle converti"></div>
     <div id="env-panel">
       <div class="ep-head">
         <h3 data-i18n="envPanel.title">Environnement</h3>
@@ -313,6 +374,15 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           </label>
         </div>
       </div>
+    </div>
+    <div id="image-panel">
+      <div class="ip-head">
+        <h3 data-i18n="imagePanel.title">Images</h3>
+        <button type="button" class="ip-close" id="ip-close" data-i18n-title="imagePanel.close" title="Fermer">×</button>
+      </div>
+      <div class="ip-body" id="ip-body"></div>
+      <button type="button" class="ip-add" id="ip-add" data-i18n="imagePanel.add">+ Ajouter une image</button>
+      <div class="ip-hint" data-i18n="imagePanel.hint">Cliquez sur une image dans la scène pour la sélectionner, puis déplacez-la ou tournez-la.</div>
     </div>
     <div id="light-panel">
       <div class="lp-head">
@@ -372,6 +442,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 </div>
 
 <div id="info"></div>
+<div id="watermark">BBMV</div>
 
 <div id="anim-bar">
   <select id="anim-select" data-i18n-title="anim.selectTitle" title="Choisir une animation"></select>
@@ -461,6 +532,20 @@ const I18N_DATA = {
     'error.glbFailed': 'La conversion GLB a échoué ; affichage direct du maillage.\n',
     'error.loading': 'Erreur lors du chargement : ',
     'error.glbUnexpected': 'Export GLB : résultat inattendu',
+    'toolbar.images': 'Images',
+    'toolbar.imagesTitle': 'Ajouter et positionner des images dans la scène',
+    'imagePanel.title': 'Images',
+    'imagePanel.close': 'Fermer',
+    'imagePanel.add': '+ Ajouter une image',
+    'imagePanel.hint': 'Cliquez sur une image dans la scène pour la sélectionner, puis déplacez-la ou tournez-la.',
+    'imagePanel.empty': 'Aucune image ajoutée',
+    'imagePanel.opacity': 'Opacité',
+    'imagePanel.scale': 'Taille',
+    'imagePanel.move': 'Déplacer',
+    'imagePanel.rotate': 'Tourner',
+    'imagePanel.delete': 'Supprimer',
+    'imagePanel.shadow': 'Ombre',
+    'imagePanel.receiveShadow': 'Recevoir',
     'toolbar.env': 'Environnement',
     'toolbar.envTitle': 'Fond, sol et grille',
     'envPanel.title': 'Environnement',
@@ -533,6 +618,20 @@ const I18N_DATA = {
     'error.glbFailed': 'GLB conversion failed; displaying raw mesh.\n',
     'error.loading': 'Loading error: ',
     'error.glbUnexpected': 'GLB export: unexpected result',
+    'toolbar.images': 'Images',
+    'toolbar.imagesTitle': 'Add and position images in the scene',
+    'imagePanel.title': 'Images',
+    'imagePanel.close': 'Close',
+    'imagePanel.add': '+ Add an image',
+    'imagePanel.hint': 'Click an image in the scene to select it, then move or rotate it.',
+    'imagePanel.empty': 'No images added',
+    'imagePanel.opacity': 'Opacity',
+    'imagePanel.scale': 'Scale',
+    'imagePanel.move': 'Move',
+    'imagePanel.rotate': 'Rotate',
+    'imagePanel.delete': 'Delete',
+    'imagePanel.shadow': 'Shadow',
+    'imagePanel.receiveShadow': 'Receive',
     'toolbar.env': 'Environment',
     'toolbar.envTitle': 'Background, ground & grid',
     'envPanel.title': 'Environment',
@@ -598,7 +697,7 @@ function loadLang(lang) {
   currentLang = lang;
   try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
   applyI18nToDom();
-  if (i18nReady) { rebuildLightPanel(); refreshDynamicTexts(); }
+  if (i18nReady) { rebuildLightPanel(); rebuildImagePanel(); refreshDynamicTexts(); }
 }
 
 {
@@ -1387,6 +1486,7 @@ tfControls.addEventListener('objectChange', () => {
 function toggleLightPanel(open) {
   const isOpen = lightPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
+  if (target) toggleImagePanel(false);
   lightPanel.classList.toggle('open', target);
   if (btnLights) btnLights.classList.toggle('active', target);
   if (!target) deselectLight();
@@ -1444,7 +1544,9 @@ function removeUserLight(idx) {
 function selectLight(idx) {
   if (idx < 0 || idx >= userLights.length) return;
   if (selectedLightIdx === idx) return;
+  deselectImage();
   selectedLightIdx = idx;
+  tfControls.setMode('translate');
   const entry = userLights[idx];
   tfControls.attach(entry.helper);
   rebuildLightPanel();
@@ -1580,18 +1682,31 @@ const lightRaycaster = new THREE.Raycaster();
 const lightMouse = new THREE.Vector2();
 
 function onViewerPointerDown(e) {
-  if (!lightPanel.classList.contains('open')) return;
+  const lpOpen = lightPanel.classList.contains('open');
+  const ipOpen = imagePanel && imagePanel.classList.contains('open');
+  if (!lpOpen && !ipOpen) return;
   if (tfControls.dragging) return;
   const rect = container.getBoundingClientRect();
   lightMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   lightMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
   lightRaycaster.setFromCamera(lightMouse, camera);
-  const helpers = userLights.map(l => l.helper);
-  const hits = lightRaycaster.intersectObjects(helpers);
-  if (hits.length > 0) {
-    const idx = hits[0].object.userData.lightIdx;
-    if (idx !== undefined) selectLight(idx);
+
+  if (lpOpen && userLights.length > 0) {
+    const helpers = userLights.map(l => l.helper);
+    const hits = lightRaycaster.intersectObjects(helpers);
+    if (hits.length > 0) {
+      const idx = hits[0].object.userData.lightIdx;
+      if (idx !== undefined) { selectLight(idx); return; }
+    }
+  }
+  if (ipOpen && userImages.length > 0) {
+    const meshes = userImages.map(im => im.mesh);
+    const hits = lightRaycaster.intersectObjects(meshes);
+    if (hits.length > 0) {
+      const idx = hits[0].object.userData.imageIdx;
+      if (idx !== undefined) selectImage(idx);
+    }
   }
 }
 
@@ -1600,6 +1715,257 @@ container.addEventListener('pointerdown', onViewerPointerDown);
 rebuildLightPanel();
 i18nReady = true;
 
+
+// ─── Image Editor ───
+const imagePanel = document.getElementById('image-panel');
+const ipBody = document.getElementById('ip-body');
+const btnImages = document.getElementById('btn-images');
+const ipClose = document.getElementById('ip-close');
+const ipAdd = document.getElementById('ip-add');
+
+const userImages = [];
+let selectedImageIdx = -1;
+let imageIdCounter = 0;
+let currentGizmoMode = 'translate';
+
+function toggleImagePanel(open) {
+  const isOpen = imagePanel.classList.contains('open');
+  const target = open !== undefined ? open : !isOpen;
+  if (target) toggleLightPanel(false);
+  imagePanel.classList.toggle('open', target);
+  if (btnImages) btnImages.classList.toggle('active', target);
+  if (!target) deselectImage();
+}
+
+if (btnImages) btnImages.addEventListener('click', () => toggleImagePanel());
+if (ipClose) ipClose.addEventListener('click', () => toggleImagePanel(false));
+
+function createUserImage(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    const img = new Image();
+    img.onload = () => {
+      const tex = new THREE.Texture(img);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+
+      const aspect = img.width / img.height;
+      const baseH = 1;
+      const baseW = baseH * aspect;
+
+      const geo = new THREE.PlaneGeometry(baseW, baseH);
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex, transparent: true, side: THREE.DoubleSide,
+        depthWrite: true, roughness: 1, metalness: 0,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.receiveShadow = false;
+
+      let cx = 0, cy = 0.5, cz = 0.5;
+      if (currentModel) {
+        const box = new THREE.Box3().setFromObject(currentModel);
+        const center = box.getCenter(new THREE.Vector3());
+        cx = center.x + (Math.random() - 0.5) * 0.4;
+        cy = center.y;
+        cz = box.max.z + 0.3 + Math.random() * 0.3;
+      }
+      mesh.position.set(cx, cy, cz);
+      mesh.userData.isUserImage = true;
+      mesh.userData.imageIdx = userImages.length;
+      scene.add(mesh);
+
+      const entry = {
+        id: imageIdCounter++, mesh, texture: tex, dataUrl,
+        name: file.name, opacity: 1.0, scale: 1.0,
+        baseWidth: baseW, baseHeight: baseH, shadowReceive: false,
+      };
+      userImages.push(entry);
+      rebuildImagePanel();
+      selectImage(userImages.length - 1);
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeUserImage(idx) {
+  if (idx < 0 || idx >= userImages.length) return;
+  const entry = userImages[idx];
+  if (selectedImageIdx === idx) deselectImage();
+  scene.remove(entry.mesh);
+  entry.mesh.geometry.dispose();
+  entry.mesh.material.dispose();
+  entry.texture.dispose();
+  userImages.splice(idx, 1);
+  userImages.forEach((e, i) => { e.mesh.userData.imageIdx = i; });
+  if (selectedImageIdx > idx) selectedImageIdx--;
+  else if (selectedImageIdx >= userImages.length) selectedImageIdx = -1;
+  rebuildImagePanel();
+}
+
+function selectImage(idx) {
+  if (idx < 0 || idx >= userImages.length) return;
+  if (selectedImageIdx === idx) return;
+  deselectLight();
+  selectedImageIdx = idx;
+  const entry = userImages[idx];
+  tfControls.setMode(currentGizmoMode);
+  tfControls.attach(entry.mesh);
+  rebuildImagePanel();
+}
+
+function deselectImage() {
+  if (selectedImageIdx === -1) return;
+  selectedImageIdx = -1;
+  tfControls.detach();
+  rebuildImagePanel();
+}
+
+function setImageGizmoMode(mode) {
+  currentGizmoMode = mode;
+  tfControls.setMode(mode);
+  rebuildImagePanel();
+}
+
+function updateImageOpacity(idx, val) {
+  if (idx < 0 || idx >= userImages.length) return;
+  userImages[idx].opacity = val;
+  userImages[idx].mesh.material.opacity = val;
+}
+
+function updateImageScale(idx, val) {
+  if (idx < 0 || idx >= userImages.length) return;
+  userImages[idx].scale = val;
+  userImages[idx].mesh.scale.set(val, val, val);
+}
+
+function updateImageShadow(idx, on) {
+  if (idx < 0 || idx >= userImages.length) return;
+  userImages[idx].shadowReceive = on;
+  userImages[idx].mesh.receiveShadow = on;
+  userImages[idx].mesh.material.needsUpdate = true;
+}
+
+function rebuildImagePanel() {
+  if (!ipBody) return;
+  ipBody.innerHTML = '';
+  if (userImages.length === 0) {
+    ipBody.innerHTML = '<div style="color:#555;text-align:center;padding:20px 0;font-size:11px;">' + t('imagePanel.empty') + '</div>';
+    return;
+  }
+  userImages.forEach((entry, i) => {
+    const card = document.createElement('div');
+    card.className = 'img-card' + (i === selectedImageIdx ? ' selected' : '');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.ic-del') || e.target.closest('input') || e.target.closest('.ic-mode-btn')) return;
+      selectImage(i);
+    });
+
+    const hdr = document.createElement('div');
+    hdr.className = 'ic-header';
+    const thumb = document.createElement('img');
+    thumb.className = 'ic-thumb';
+    thumb.src = entry.dataUrl;
+    hdr.appendChild(thumb);
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'ic-name';
+    nameSpan.textContent = entry.name;
+    nameSpan.title = entry.name;
+    hdr.appendChild(nameSpan);
+    const del = document.createElement('button');
+    del.className = 'ic-del';
+    del.title = t('imagePanel.delete');
+    del.textContent = '\u2715';
+    del.addEventListener('click', (e) => { e.stopPropagation(); removeUserImage(i); });
+    hdr.appendChild(del);
+    card.appendChild(hdr);
+
+    const rowOp = document.createElement('div');
+    rowOp.className = 'ic-row';
+    rowOp.innerHTML = '<label>' + t('imagePanel.opacity') + '</label>';
+    const opRange = document.createElement('input');
+    opRange.type = 'range'; opRange.min = '0'; opRange.max = '1'; opRange.step = '0.05';
+    opRange.value = String(entry.opacity);
+    const opVal = document.createElement('span');
+    opVal.className = 'ic-val';
+    opVal.textContent = entry.opacity.toFixed(2);
+    opRange.addEventListener('input', () => {
+      const v = parseFloat(opRange.value);
+      updateImageOpacity(i, v);
+      opVal.textContent = v.toFixed(2);
+    });
+    rowOp.appendChild(opRange);
+    rowOp.appendChild(opVal);
+    card.appendChild(rowOp);
+
+    const rowSc = document.createElement('div');
+    rowSc.className = 'ic-row';
+    rowSc.innerHTML = '<label>' + t('imagePanel.scale') + '</label>';
+    const scRange = document.createElement('input');
+    scRange.type = 'range'; scRange.min = '0.1'; scRange.max = '5'; scRange.step = '0.1';
+    scRange.value = String(entry.scale);
+    const scVal = document.createElement('span');
+    scVal.className = 'ic-val';
+    scVal.textContent = entry.scale.toFixed(1);
+    scRange.addEventListener('input', () => {
+      const v = parseFloat(scRange.value);
+      updateImageScale(i, v);
+      scVal.textContent = v.toFixed(1);
+    });
+    rowSc.appendChild(scRange);
+    rowSc.appendChild(scVal);
+    card.appendChild(rowSc);
+
+    const rowSh = document.createElement('div');
+    rowSh.className = 'ic-row';
+    rowSh.innerHTML = '<label>' + t('imagePanel.shadow') + '</label>';
+    const shCheck = document.createElement('input');
+    shCheck.type = 'checkbox';
+    shCheck.checked = entry.shadowReceive;
+    shCheck.style.accentColor = '#7c8aff';
+    shCheck.style.cursor = 'pointer';
+    shCheck.addEventListener('change', () => updateImageShadow(i, shCheck.checked));
+    rowSh.appendChild(shCheck);
+    const shLbl = document.createElement('span');
+    shLbl.className = 'lc-chk-label';
+    shLbl.textContent = t('imagePanel.receiveShadow');
+    shLbl.style.cursor = 'pointer';
+    shLbl.addEventListener('click', () => { shCheck.checked = !shCheck.checked; updateImageShadow(i, shCheck.checked); });
+    rowSh.appendChild(shLbl);
+    card.appendChild(rowSh);
+
+    if (i === selectedImageIdx) {
+      const modes = document.createElement('div');
+      modes.className = 'ic-modes';
+      const btnMove = document.createElement('button');
+      btnMove.className = 'ic-mode-btn' + (currentGizmoMode === 'translate' ? ' active' : '');
+      btnMove.textContent = t('imagePanel.move');
+      btnMove.addEventListener('click', (e) => { e.stopPropagation(); setImageGizmoMode('translate'); });
+      modes.appendChild(btnMove);
+      const btnRot = document.createElement('button');
+      btnRot.className = 'ic-mode-btn' + (currentGizmoMode === 'rotate' ? ' active' : '');
+      btnRot.textContent = t('imagePanel.rotate');
+      btnRot.addEventListener('click', (e) => { e.stopPropagation(); setImageGizmoMode('rotate'); });
+      modes.appendChild(btnRot);
+      card.appendChild(modes);
+    }
+
+    ipBody.appendChild(card);
+  });
+}
+
+if (ipAdd) {
+  ipAdd.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => { if (input.files[0]) createUserImage(input.files[0]); };
+    input.click();
+  });
+}
+
+rebuildImagePanel();
 
 const loadingEl = document.getElementById('loading');
 const loadingMsg = document.getElementById('loading-msg');
