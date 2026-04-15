@@ -80,26 +80,29 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   font-size: 11px; color: #555; line-height: 1.5;
 }
 
-#gif-modal {
+#export-modal {
   position: fixed; inset: 0; z-index: 300;
   display: none; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
 }
-#gif-modal.open { display: flex; }
-#gif-modal .panel {
-  width: 360px; max-width: 92vw; padding: 22px 22px 18px;
+#export-modal.open { display: flex; }
+#export-modal .panel {
+  width: 400px; max-width: 92vw; padding: 22px 22px 18px;
   background: #1c1c28; border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
-#gif-modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: #e8e8f0; }
-#gif-modal .row { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-#gif-modal .row label { font-size: 12px; color: #9a9ab0; flex: 1; }
-#gif-modal .row input[type="number"], #gif-modal .row select {
-  width: 100px; padding: 6px 8px; border-radius: 6px;
+#export-modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: #e8e8f0; }
+#export-modal .row { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#export-modal .row label { font-size: 12px; color: #9a9ab0; flex: 1; }
+#export-modal .row input[type="number"], #export-modal .row select, #export-modal .row input[type="text"] {
+  padding: 6px 8px; border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.12); background: #12121a; color: #ddd; font-size: 12px;
 }
-#gif-modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
-#gif-modal .hint { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.45; }
+#export-modal .row input[type="number"] { width: 100px; flex-shrink: 0; }
+#export-modal .row select { flex: 1; min-width: 120px; max-width: 220px; width: auto; }
+#export-modal .row input[type="text"] { flex: 1; min-width: 0; max-width: 220px; }
+#export-modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+#export-modal .hint { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.45; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 #loading-inner { text-align: center; }
 #loading-msg { margin-top: 14px; font-size: 13px; color: #aaa; }
@@ -483,7 +486,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     <input type="range" id="turntable-speed" min="0.5" max="6" step="0.25" value="2.5">
   </div>
   <span class="sep"></span>
-  <button type="button" class="btn" id="btn-gif" disabled data-i18n-title="toolbar.gifTitle" title="Exporter un GIF (turntable ou vue fixe, avec animation)">GIF</button>
+  <button type="button" class="btn" id="btn-export" disabled data-i18n="toolbar.exportMedia" data-i18n-title="toolbar.exportMediaTitle" title="Exporter une image (PNG ou GIF)">Export</button>
   <span class="sep"></span>
   <button type="button" class="btn" id="btn-export-proj" disabled data-i18n="toolbar.exportProject" data-i18n-title="toolbar.exportProjectTitle" title="Exporter le projet">Exporter projet</button>
   <button type="button" class="btn" id="btn-import-proj" data-i18n="toolbar.importProject" data-i18n-title="toolbar.importProjectTitle" title="Importer un projet">Importer projet</button>
@@ -559,7 +562,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <button type="button" class="cp-close" id="cp-close" data-i18n-title="camPanel.close" title="Fermer">×</button>
       </div>
       <div class="cp-body" id="cp-body"></div>
-      <div class="cp-hint" data-i18n="camPanel.hint">Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.</div>
+      <div class="cp-hint" data-i18n="camPanel.hint">Activez la caméra, positionnez-la dans la scène, puis exportez en PNG ou GIF. La vue correspondra à cette caméra.</div>
     </div>
     <div id="image-panel">
       <div class="ip-head">
@@ -591,32 +594,55 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   </section>
 </main>
 
-<div id="gif-modal" aria-hidden="true">
+<div id="export-modal" aria-hidden="true">
   <div class="panel">
-    <h3 data-i18n="gif.title">Exporter un GIF</h3>
+    <h3 data-i18n="export.title">Exporter</h3>
     <div class="row">
-      <label for="gif-camera-mode" data-i18n="gif.camera">Caméra</label>
-      <select id="gif-camera-mode">
-        <option value="turntable" data-i18n="gif.turntableOpt">Turntable (360° autour du modèle)</option>
-        <option value="fixe" data-i18n="gif.fixedOpt">Vue fixe (position actuelle)</option>
+      <label for="export-format" data-i18n="export.format">Format</label>
+      <select id="export-format">
+        <option value="gif" data-i18n="export.formatGif">GIF</option>
+        <option value="png" data-i18n="export.formatPng">PNG</option>
       </select>
     </div>
     <div class="row">
-      <label for="gif-frames" id="gif-frames-label" data-i18n="gif.framesTurntable">Images (tour 360°)</label>
-      <input type="number" id="gif-frames" min="12" max="120" value="48" step="1">
+      <label for="export-filename" data-i18n="export.fileName">Nom du fichier</label>
+      <input type="text" id="export-filename" autocomplete="off" spellcheck="false" placeholder="">
     </div>
     <div class="row">
-      <label for="gif-delay" data-i18n="gif.delay">Pause entre images (ms)</label>
-      <input type="number" id="gif-delay" min="20" max="250" value="60" step="5">
+      <label for="export-width" data-i18n="export.maxWidth">Largeur max (px)</label>
+      <input type="number" id="export-width" min="240" max="3200" value="480" step="20">
     </div>
-    <div class="row">
-      <label for="gif-width" data-i18n="gif.maxWidth">Largeur max (px)</label>
-      <input type="number" id="gif-width" min="240" max="800" value="480" step="20">
+    <div id="export-gif-options">
+      <div class="row">
+        <label for="gif-camera-mode" data-i18n="gif.camera">Caméra</label>
+        <select id="gif-camera-mode">
+          <option value="turntable" data-i18n="gif.turntableOpt">Turntable (360° autour du modèle)</option>
+          <option value="fixe" data-i18n="gif.fixedOpt">Vue fixe (position actuelle)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="gif-frames" id="gif-frames-label" data-i18n="gif.framesTurntable">Images (tour 360°)</label>
+        <input type="number" id="gif-frames" min="12" max="120" value="48" step="1">
+      </div>
+      <div class="row">
+        <label for="gif-delay" data-i18n="gif.delay">Pause entre images (ms)</label>
+        <input type="number" id="gif-delay" min="20" max="250" value="60" step="5">
+      </div>
     </div>
-    <p class="hint" id="gif-hint" data-i18n="gif.hint">Turntable : la caméra fait un tour de 360° sur le nombre d’images indiqué. Vue fixe : la caméra reste à la position actuelle. Si une animation est sélectionnée en bas de page, elle est rejouée depuis le début sur chaque image (la pause entre images définit la vitesse). Connexion Internet requise pour l’encodeur GIF.</p>
+    <div id="export-png-options" style="display: none;">
+      <div class="row">
+        <label for="png-camera-mode" data-i18n="export.pngCamera">Caméra</label>
+        <select id="png-camera-mode">
+          <option value="editor" data-i18n="export.pngCamEditor">Vue éditeur (actuelle)</option>
+          <option value="export" data-i18n="export.pngCamExport">Caméra d’export</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint" id="export-hint-gif" data-i18n="export.hintGif">GIF : turntable ou vue fixe, nombre d’images et délai. Les animations sont échantillonnées sur la timeline. Connexion Internet requise pour l’encodeur GIF.</p>
+    <p class="hint" id="export-hint-png" data-i18n="export.hintPng" style="display: none;">PNG : une capture à l’instant T. Choisissez la vue éditeur ou la caméra d’export (si elle est activée).</p>
     <div class="actions">
-      <button type="button" class="btn" id="gif-cancel" data-i18n="gif.cancel">Annuler</button>
-      <button type="button" class="btn" id="gif-export-run" data-i18n="gif.export" style="background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #e0e4ff;">Exporter</button>
+      <button type="button" class="btn" id="export-cancel" data-i18n="gif.cancel">Annuler</button>
+      <button type="button" class="btn" id="export-run" data-i18n="gif.export" style="background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #e0e4ff;">Exporter</button>
     </div>
   </div>
 </div>
@@ -678,8 +704,22 @@ const I18N_DATA = {
     'toolbar.turntable': 'Turntable',
     'toolbar.turntableTitle': 'Rotation automatique autour du modèle',
     'toolbar.speed': 'Vitesse',
-    'toolbar.gif': 'GIF',
-    'toolbar.gifTitle': 'Exporter un GIF (turntable ou vue fixe, avec animation)',
+    'toolbar.exportMedia': 'Export',
+    'toolbar.exportMediaTitle': 'Exporter en PNG ou GIF (taille, nom, options)',
+    'export.title': 'Exporter',
+    'export.format': 'Format',
+    'export.formatGif': 'GIF',
+    'export.formatPng': 'PNG',
+    'export.fileName': 'Nom du fichier',
+    'export.maxWidth': 'Largeur max (px)',
+    'export.pngCamera': 'Caméra',
+    'export.pngCamEditor': 'Vue éditeur (actuelle)',
+    'export.pngCamExport': 'Caméra d’export',
+    'export.hintGif': 'GIF : turntable ou vue fixe, nombre d’images et délai. Les animations sont échantillonnées sur la timeline. Connexion Internet requise pour l’encodeur GIF.',
+    'export.hintPng': 'PNG : une capture à l’instant T. Vue éditeur ou caméra d’export (si activée).',
+    'export.pngNeedExportCam': 'Activez la caméra d’export et positionnez-la, ou choisissez « Vue éditeur ».',
+    'loading.pngExport': 'Export PNG…',
+    'error.pngExport': 'Export PNG impossible : ',
     'toolbar.exportProject': 'Exporter projet',
     'toolbar.exportProjectTitle': 'Exporter la configuration complète du projet (.bbmv)',
     'toolbar.importProject': 'Importer projet',
@@ -748,7 +788,7 @@ const I18N_DATA = {
     'error.loading': 'Erreur lors du chargement : ',
     'error.glbUnexpected': 'Export GLB : résultat inattendu',
     'toolbar.camera': '🎬 Caméra',
-    'toolbar.cameraTitle': 'Caméra d\'export GIF',
+    'toolbar.cameraTitle': 'Caméra d\'export (PNG / GIF)',
     'camPanel.title': 'Caméra d\'export',
     'camPanel.close': 'Fermer',
     'camPanel.enable': 'Activer la caméra d\'export',
@@ -757,8 +797,8 @@ const I18N_DATA = {
     'camPanel.rotate': 'Tourner',
     'camPanel.snap': 'Capturer la vue actuelle',
     'camPanel.goToView': 'Se rendre sur la vue de la caméra',
-    'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
-    'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
+    'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez en PNG ou GIF. La vue correspondra à cette caméra.',
+    'camPanel.disabled': 'Caméra désactivée — l\'export utilisera la vue de l\'\u00e9diteur.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Ajouter et positionner des images dans la scène',
     'toolbar.texts': 'Texte',
@@ -811,8 +851,22 @@ const I18N_DATA = {
     'toolbar.turntable': 'Turntable',
     'toolbar.turntableTitle': 'Auto-rotate around the model',
     'toolbar.speed': 'Speed',
-    'toolbar.gif': 'GIF',
-    'toolbar.gifTitle': 'Export a GIF (turntable or fixed view, with animation)',
+    'toolbar.exportMedia': 'Export',
+    'toolbar.exportMediaTitle': 'Export PNG or GIF (size, filename, options)',
+    'export.title': 'Export',
+    'export.format': 'Format',
+    'export.formatGif': 'GIF',
+    'export.formatPng': 'PNG',
+    'export.fileName': 'Filename',
+    'export.maxWidth': 'Max width (px)',
+    'export.pngCamera': 'Camera',
+    'export.pngCamEditor': 'Editor view (current)',
+    'export.pngCamExport': 'Export camera',
+    'export.hintGif': 'GIF: turntable or fixed view, frame count and delay. Animations are sampled along the timeline. Internet required for the GIF encoder.',
+    'export.hintPng': 'PNG: a single snapshot. Use the current editor view or the export camera (if enabled).',
+    'export.pngNeedExportCam': 'Enable and position the export camera, or choose “Editor view”.',
+    'loading.pngExport': 'Exporting PNG…',
+    'error.pngExport': 'PNG export failed: ',
     'toolbar.exportProject': 'Export project',
     'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
     'toolbar.importProject': 'Import project',
@@ -856,10 +910,6 @@ const I18N_DATA = {
     'gif.hint': 'Turntable: the camera orbits 360° over the specified number of frames. Fixed view: the camera stays at its current position. If an animation is selected at the bottom, it replays from the start on each frame (the delay between frames controls speed). Internet connection required for the GIF encoder.',
     'gif.cancel': 'Cancel',
     'gif.export': 'Export',
-    'toolbar.exportProject': 'Export project',
-    'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
-    'toolbar.importProject': 'Import project',
-    'toolbar.importProjectTitle': 'Import a saved project (.bbmv)',
     'drop.title': 'Drop a .bbmodel, .glb or .bbmv here',
     'loading.importingProject': 'Importing project\u2026',
     'drop.subtitle': 'or click to browse',
@@ -880,20 +930,8 @@ const I18N_DATA = {
     'error.glbFailed': 'GLB conversion failed; displaying raw mesh.\n',
     'error.loading': 'Loading error: ',
     'error.glbUnexpected': 'GLB export: unexpected result',
-    'toolbar.camera': '🎬 Caméra',
-    'toolbar.cameraTitle': 'Caméra d\'export GIF',
-    'camPanel.title': 'Caméra d\'export',
-    'camPanel.close': 'Fermer',
-    'camPanel.enable': 'Activer la caméra d\'export',
-    'camPanel.fov': 'Champ de vision',
-    'camPanel.move': 'Déplacer',
-    'camPanel.rotate': 'Tourner',
-    'camPanel.snap': 'Capturer la vue actuelle',
-    'camPanel.goToView': 'Se rendre sur la vue de la caméra',
-    'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
-    'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
     'toolbar.camera': '🎬 Camera',
-    'toolbar.cameraTitle': 'GIF export camera',
+    'toolbar.cameraTitle': 'Export camera (PNG / GIF)',
     'camPanel.title': 'Export camera',
     'camPanel.close': 'Close',
     'camPanel.enable': 'Enable export camera',
@@ -902,8 +940,8 @@ const I18N_DATA = {
     'camPanel.rotate': 'Rotate',
     'camPanel.snap': 'Capture current view',
     'camPanel.goToView': 'Go to camera view',
-    'camPanel.hint': 'Enable the camera, position it in the scene, then export a GIF. The GIF view will match this camera.',
-    'camPanel.disabled': 'Camera disabled — GIF will use the editor view.',
+    'camPanel.hint': 'Enable the camera, position it in the scene, then export PNG or GIF. The view will match this camera.',
+    'camPanel.disabled': 'Camera disabled — export will use the editor view.',
     'toolbar.images': 'Images',
     'toolbar.imagesTitle': 'Add and position images in the scene',
     'toolbar.texts': 'Text',
@@ -2035,7 +2073,7 @@ function registerEditorModel(displayRoot, opts) {
 
   refreshShadowSystem();
   syncExportProjectButton();
-  const gifBtn = document.getElementById('btn-gif');
+  const gifBtn = document.getElementById('btn-export');
   if (gifBtn) gifBtn.disabled = false;
   document.getElementById('dropzone')?.classList.add('hidden');
   updateModelNameToolbar();
@@ -2586,7 +2624,7 @@ function removeEditorModel(idx) {
   updateModelNameToolbar();
   if (editorModels.length === 0) {
     document.getElementById('dropzone')?.classList.remove('hidden');
-    const gifBtn = document.getElementById('btn-gif');
+    const gifBtn = document.getElementById('btn-export');
     if (gifBtn) gifBtn.disabled = true;
     lastGlbBlob = null;
     clearAnimationState();
@@ -3315,10 +3353,46 @@ rebuildTextPanel();
 
 const loadingEl = document.getElementById('loading');
 const loadingMsg = document.getElementById('loading-msg');
-const gifModal = document.getElementById('gif-modal');
-const btnGif = document.getElementById('btn-gif');
+const exportModal = document.getElementById('export-modal');
+const btnExport = document.getElementById('btn-export');
+const exportFormatSelect = document.getElementById('export-format');
 const gifCameraMode = document.getElementById('gif-camera-mode');
 const gifFramesLabel = document.getElementById('gif-frames-label');
+
+function getExportBaseName() {
+  const inp = document.getElementById('export-filename');
+  let s = (inp && inp.value && String(inp.value).trim()) ? String(inp.value).trim() : '';
+  if (!s) {
+    const el = document.getElementById('model-name');
+    s = (el && el.textContent) ? el.textContent.trim() : 'capture';
+    s = s.replace(/\s+\+\s*\d+[\s\S]*$/, '').trim();
+  }
+  s = s.replace(/[^\w\-]+/g, '_').replace(/^_+|_+$/g, '');
+  return s || 'capture';
+}
+
+function syncExportModalRows() {
+  const fmt = document.getElementById('export-format')?.value || 'gif';
+  const gifOpts = document.getElementById('export-gif-options');
+  const pngOpts = document.getElementById('export-png-options');
+  const hintGif = document.getElementById('export-hint-gif');
+  const hintPng = document.getElementById('export-hint-png');
+  const wInp = document.getElementById('export-width');
+  if (gifOpts) gifOpts.style.display = fmt === 'gif' ? 'block' : 'none';
+  if (pngOpts) pngOpts.style.display = fmt === 'png' ? 'block' : 'none';
+  if (hintGif) hintGif.style.display = fmt === 'gif' ? 'block' : 'none';
+  if (hintPng) hintPng.style.display = fmt === 'png' ? 'block' : 'none';
+  if (wInp) {
+    const cur = parseInt(wInp.value, 10) || 480;
+    if (fmt === 'gif') {
+      wInp.max = '800';
+      if (cur > 800) wInp.value = '800';
+    } else {
+      wInp.max = '3200';
+    }
+  }
+  updateGifModalHints();
+}
 
 function updateGifModalHints() {
   if (gifFramesLabel && gifCameraMode) {
@@ -3391,7 +3465,7 @@ async function exportViewerGif() {
 
   let numFrames = parseInt(document.getElementById('gif-frames').value, 10);
   let delayMs = parseInt(document.getElementById('gif-delay').value, 10);
-  let maxW = parseInt(document.getElementById('gif-width').value, 10);
+  let maxW = parseInt(document.getElementById('export-width').value, 10);
   numFrames = Math.max(12, Math.min(120, numFrames));
   delayMs = Math.max(20, Math.min(250, delayMs));
   maxW = Math.max(240, Math.min(800, maxW));
@@ -3400,8 +3474,8 @@ async function exportViewerGif() {
   const statesSnap = cloneAnimStatesSnapshot();
   const restoreForceLoop = animForceLoop;
 
-  gifModal.classList.remove('open');
-  gifModal.setAttribute('aria-hidden', 'true');
+  exportModal.classList.remove('open');
+  exportModal.setAttribute('aria-hidden', 'true');
   loadingEl.classList.add('active');
   loadingMsg.textContent = t('loading.gifEncoder');
 
@@ -3501,7 +3575,7 @@ async function exportViewerGif() {
 
     gif.finish();
     const out = gif.bytes();
-    const safeName = document.getElementById('model-name').textContent.replace(/[^\w\-]+/g, '_') || 'model';
+    const baseName = getExportBaseName();
     const blob = new Blob([out], { type: 'image/gif' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -3509,7 +3583,7 @@ async function exportViewerGif() {
     const expBound = getBoundEntry();
     const expName = expBound ? ensureEntryAnimState(expBound).name : null;
     const animPart = expName ? String(expName).replace(/[^\w\-]+/g, '_') : 'pose';
-    a.download = `${safeName}_${modePart}_${animPart}.gif`;
+    a.download = `${baseName}_${modePart}_${animPart}.gif`;
     a.click();
     URL.revokeObjectURL(a.href);
   } catch (err) {
@@ -3546,34 +3620,177 @@ async function exportViewerGif() {
   }
 }
 
+async function exportViewerPng() {
+  if (!hasAnyModel()) return;
+
+  saveAnimUIBoundToCurrentEntry();
+
+  let maxW = parseInt(document.getElementById('export-width').value, 10);
+  maxW = Math.max(240, Math.min(3200, maxW));
+
+  const pngCamMode = document.getElementById('png-camera-mode');
+  const useExportCamForPng = pngCamMode && pngCamMode.value === 'export';
+  if (useExportCamForPng && !exportCamEnabled) {
+    alert(t('export.pngNeedExportCam'));
+    return;
+  }
+
+  exportModal.classList.remove('open');
+  exportModal.setAttribute('aria-hidden', 'true');
+  loadingEl.classList.add('active');
+  loadingMsg.textContent = t('loading.pngExport');
+
+  const prevTarget = controls.target.clone();
+  const prevPos = camera.position.clone();
+  const prevSize = new THREE.Vector2();
+  renderer.getSize(prevSize);
+
+  const snap = document.createElement('canvas');
+  const snapCtx = snap.getContext('2d', { willReadFrequently: true });
+
+  setTurntable(false);
+  controls.enabled = false;
+
+  const helperWasVisible = userLights.map(e => e.helper.visible);
+  userLights.forEach(e => { e.helper.visible = false; });
+  const camHelperWas = exportCamHelper.visible;
+  exportCamHelper.visible = false;
+  const gizmoWasAttached = !!tfControls.object;
+  const gizmoAttachedObject = tfControls.object;
+  const gizmoSavedMode = tfControls.mode;
+  if (gizmoWasAttached) tfControls.detach();
+
+  const useExpCam = useExportCamForPng && exportCamEnabled;
+  const renderCam = useExpCam ? exportCam : camera;
+  const expCamPosSaved = useExpCam ? exportCam.position.clone() : null;
+  const expCamRotSaved = useExpCam ? exportCam.rotation.clone() : null;
+
+  try {
+    const aspect = prevSize.x / prevSize.y;
+    const expW = Math.min(maxW, prevSize.x);
+    const expH = Math.round(expW / aspect);
+
+    renderer.setSize(expW, expH, true);
+    renderCam.aspect = expW / expH;
+    renderCam.updateProjectionMatrix();
+
+    if (!useExpCam) {
+      camera.position.copy(prevPos);
+      camera.lookAt(prevTarget);
+    }
+
+    controls.update();
+    renderer.render(scene, renderCam);
+
+    const bufW = renderer.domElement.width;
+    const bufH = renderer.domElement.height;
+    snap.width = bufW;
+    snap.height = bufH;
+    snapCtx.drawImage(renderer.domElement, 0, 0);
+
+    const wmSize = Math.max(12, Math.round(bufH * 0.04));
+    snapCtx.save();
+    snapCtx.font = `800 ${wmSize}px 'Segoe UI', system-ui, sans-serif`;
+    snapCtx.letterSpacing = '1.5px';
+    snapCtx.fillStyle = 'rgba(255,255,255,0.18)';
+    snapCtx.textAlign = 'right';
+    snapCtx.textBaseline = 'bottom';
+    snapCtx.fillText('BBMV', bufW - 10, bufH - 8);
+    snapCtx.restore();
+
+    const baseName = getExportBaseName();
+    const camPart = useExpCam ? 'exportcam' : 'vue';
+    const fname = `${baseName}_${camPart}.png`;
+
+    await new Promise((resolve) => {
+      snap.toBlob((blob) => {
+        if (!blob) {
+          resolve();
+          return;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        resolve();
+      }, 'image/png');
+    });
+  } catch (err) {
+    console.error(err);
+    alert(t('error.pngExport') + (err.message || err));
+  } finally {
+    renderer.setSize(prevSize.x, prevSize.y, true);
+    camera.aspect = prevSize.x / prevSize.y;
+    camera.updateProjectionMatrix();
+    camera.position.copy(prevPos);
+    if (useExpCam) {
+      exportCam.position.copy(expCamPosSaved);
+      exportCam.rotation.copy(expCamRotSaved);
+      exportCam.aspect = 16 / 9;
+      exportCam.updateProjectionMatrix();
+    }
+    controls.target.copy(prevTarget);
+    controls.enabled = true;
+    controls.update();
+
+    userLights.forEach((e, i) => { e.helper.visible = helperWasVisible[i] ?? true; });
+    exportCamHelper.visible = camHelperWas;
+    if (gizmoWasAttached && gizmoAttachedObject) {
+      tfControls.setMode(gizmoSavedMode || 'translate');
+      tfControls.attach(gizmoAttachedObject);
+    }
+
+    renderer.render(scene, camera);
+    loadingMsg.textContent = '';
+    loadingEl.classList.remove('active');
+  }
+}
+
+async function runExportFromModal() {
+  const fmt = document.getElementById('export-format')?.value || 'gif';
+  if (fmt === 'png') await exportViewerPng();
+  else await exportViewerGif();
+}
+
 if (gifCameraMode) {
   gifCameraMode.addEventListener('change', updateGifModalHints);
 }
 const gifFramesInput = document.getElementById('gif-frames');
 if (gifFramesInput) gifFramesInput.addEventListener('input', updateGifModalHints);
+if (exportFormatSelect) {
+  exportFormatSelect.addEventListener('change', () => syncExportModalRows());
+}
 
-if (btnGif) {
-  btnGif.addEventListener('click', () => {
-    if (!hasAnyModel() || btnGif.disabled) return;
-    updateGifModalHints();
-    gifModal.classList.add('open');
-    gifModal.setAttribute('aria-hidden', 'false');
+if (btnExport) {
+  btnExport.addEventListener('click', () => {
+    if (!hasAnyModel() || btnExport.disabled) return;
+    const fnInp = document.getElementById('export-filename');
+    if (fnInp && !fnInp.value.trim()) {
+      const el = document.getElementById('model-name');
+      let hint = (el && el.textContent) ? el.textContent.trim() : '';
+      hint = hint.replace(/\s+\+\s*\d+[\s\S]*$/, '').trim();
+      fnInp.placeholder = hint.replace(/[^\w\-\s]/g, '_') || '';
+    }
+    syncExportModalRows();
+    exportModal.classList.add('open');
+    exportModal.setAttribute('aria-hidden', 'false');
   });
 }
 
-document.getElementById('gif-cancel').addEventListener('click', () => {
-  gifModal.classList.remove('open');
-  gifModal.setAttribute('aria-hidden', 'true');
+document.getElementById('export-cancel')?.addEventListener('click', () => {
+  exportModal.classList.remove('open');
+  exportModal.setAttribute('aria-hidden', 'true');
 });
 
-document.getElementById('gif-export-run').addEventListener('click', () => {
-  exportViewerGif();
+document.getElementById('export-run')?.addEventListener('click', () => {
+  runExportFromModal();
 });
 
-gifModal.addEventListener('click', (e) => {
-  if (e.target === gifModal) {
-    gifModal.classList.remove('open');
-    gifModal.setAttribute('aria-hidden', 'true');
+exportModal?.addEventListener('click', (e) => {
+  if (e.target === exportModal) {
+    exportModal.classList.remove('open');
+    exportModal.setAttribute('aria-hidden', 'true');
   }
 });
 
@@ -3743,7 +3960,7 @@ async function handleFile(file) {
     if (editorModels.length === 0) document.getElementById('dropzone').classList.remove('hidden');
     setGlbDownloadState(null);
     if (!hasAnyModel()) {
-      const gifBtn = document.getElementById('btn-gif');
+      const gifBtn = document.getElementById('btn-export');
       if (gifBtn) gifBtn.disabled = true;
     }
   } finally {
@@ -3792,7 +4009,7 @@ async function handleGlbFile(file) {
     alert(t('error.loading') + (err.message || err));
     if (editorModels.length === 0) document.getElementById('dropzone').classList.remove('hidden');
     if (!hasAnyModel()) {
-      const gifBtn = document.getElementById('btn-gif');
+      const gifBtn = document.getElementById('btn-export');
       if (gifBtn) gifBtn.disabled = true;
     }
   } finally {
@@ -3841,6 +4058,7 @@ function handleDroppedModelFile(file) {
 }
 
 async function gatherProjectData() {
+  saveAnimUIBoundToCurrentEntry();
   const proj = { version: 2 };
   proj.models = [];
   for (const e of editorModels) {
@@ -3868,6 +4086,8 @@ async function gatherProjectData() {
     if (e.bbmodelAnimData?.animations?.length > 0) {
       row.animations = JSON.parse(JSON.stringify(e.bbmodelAnimData.animations));
     }
+    const st = ensureEntryAnimState(e);
+    row.animState = { name: st.name, time: st.time, playing: st.playing };
     proj.models.push(row);
   }
   return finishGatherProject(proj);
@@ -3936,6 +4156,9 @@ function finishGatherProject(proj) {
   // Turntable
   proj.turntable = controls.autoRotate;
   proj.turntableSpeed = controls.autoRotateSpeed;
+
+  proj.animForceLoop = animForceLoop;
+  proj.selectedModelIdx = selectedModelIdx;
 
   return proj;
 }
@@ -4021,14 +4244,40 @@ async function importProject(file) {
         if (m.animations && m.animations.length > 0) {
           entry.bbmodelAnimData = { animations: m.animations };
         }
+        if (m.animState && typeof m.animState === 'object') {
+          entry.animState = {
+            name: typeof m.animState.name === 'string' ? m.animState.name : null,
+            time: typeof m.animState.time === 'number' && Number.isFinite(m.animState.time) ? m.animState.time : 0,
+            playing: !!m.animState.playing,
+          };
+        }
         entry.animNodeMap = buildNodeMapFromLoadedGltf(entry.root);
       }
-      rebuildAnimationBarGlobal({ preservePlayback: false });
-      if (sceneHasAnyAnimations() && editorModels.length > 0) {
-        selectModel(0);
+      if (proj.animForceLoop !== undefined) animForceLoop = !!proj.animForceLoop;
+      if (editorModels.length > 0) {
+        const want = proj.selectedModelIdx != null ? Number(proj.selectedModelIdx) : 0;
+        const safeIdx = Number.isFinite(want)
+          ? Math.max(0, Math.min(want, editorModels.length - 1))
+          : 0;
+        selectedModelIdx = -1;
+        selectModel(safeIdx);
       } else {
+        rebuildAnimationBarGlobal({ preservePlayback: true });
         rebuildModelPanel();
       }
+      let resumeAnimClock = false;
+      for (const e of editorModels) {
+        ensureParsedAnimsForEntry(e);
+        const st = ensureEntryAnimState(e);
+        if (st.name && st.playing) {
+          const anim = findAnimByName(e, st.name);
+          if (anim && anim.length > 0) {
+            resumeAnimClock = true;
+            break;
+          }
+        }
+      }
+      if (resumeAnimClock) lastFrameTime = performance.now();
       if (editorModels[0]) {
         setGlbDownloadState(editorModels[0].glbBlob, editorModels[0].name);
         frameModel(editorModels[0].group);
