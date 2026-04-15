@@ -594,6 +594,7 @@ const I18N_DATA = {
     'camPanel.move': 'Déplacer',
     'camPanel.rotate': 'Tourner',
     'camPanel.snap': 'Capturer la vue actuelle',
+    'camPanel.goToView': 'Se rendre sur la vue de la caméra',
     'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
     'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
     'toolbar.images': 'Images',
@@ -692,6 +693,7 @@ const I18N_DATA = {
     'camPanel.move': 'Déplacer',
     'camPanel.rotate': 'Tourner',
     'camPanel.snap': 'Capturer la vue actuelle',
+    'camPanel.goToView': 'Se rendre sur la vue de la caméra',
     'camPanel.hint': 'Activez la caméra, positionnez-la dans la scène, puis exportez un GIF. La vue du GIF correspondra à cette caméra.',
     'camPanel.disabled': 'Caméra désactivée — le GIF utilisera la vue de l\'\u00e9diteur.',
     'toolbar.camera': '🎬 Camera',
@@ -703,6 +705,7 @@ const I18N_DATA = {
     'camPanel.move': 'Move',
     'camPanel.rotate': 'Rotate',
     'camPanel.snap': 'Capture current view',
+    'camPanel.goToView': 'Go to camera view',
     'camPanel.hint': 'Enable the camera, position it in the scene, then export a GIF. The GIF view will match this camera.',
     'camPanel.disabled': 'Camera disabled — GIF will use the editor view.',
     'toolbar.images': 'Images',
@@ -1387,6 +1390,9 @@ controls.dampingFactor = 0.08;
 controls.target.set(0, 0.5, 0);
 controls.autoRotate = false;
 controls.autoRotateSpeed = 2.5;
+controls.listenToKeyEvents(window);
+controls.keys = { LEFT: 'ArrowLeft', UP: 'ArrowUp', RIGHT: 'ArrowRight', BOTTOM: 'ArrowDown' };
+controls.keyPanSpeed = 12;
 controls.update();
 
 const btnTurntable = document.getElementById('btn-turntable');
@@ -1867,6 +1873,16 @@ function snapExportCamToView() {
   rebuildCamPanel();
 }
 
+function goToExportCamView() {
+  const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(exportCam.quaternion);
+  const target = new THREE.Vector3().copy(exportCam.position).add(dir.multiplyScalar(2));
+  camera.position.copy(exportCam.position);
+  camera.fov = exportCam.fov;
+  camera.updateProjectionMatrix();
+  controls.target.copy(target);
+  controls.update();
+}
+
 function setCamGizmoMode(mode) {
   camGizmoMode = mode;
   tfControls.setMode(mode);
@@ -1910,6 +1926,12 @@ function rebuildCamPanel() {
   snapBtn.textContent = t('camPanel.snap');
   snapBtn.addEventListener('click', snapExportCamToView);
   cpBody.appendChild(snapBtn);
+
+  const goBtn = document.createElement('button');
+  goBtn.className = 'cp-snap-btn';
+  goBtn.textContent = t('camPanel.goToView');
+  goBtn.addEventListener('click', goToExportCamView);
+  cpBody.appendChild(goBtn);
 
   const rowFov = document.createElement('div');
   rowFov.className = 'cp-row';
