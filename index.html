@@ -11,6 +11,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .viewer-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: #0d0d12; position: relative; }
 #viewer { flex: 1 1 auto; min-height: 200px; position: relative; width: 100%; }
 #viewer canvas { display: block; position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+#viewer .watermark {
+  position: absolute; bottom: 10px; right: 14px; z-index: 5;
+  font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: 1.5px; color: rgba(255,255,255,0.12); pointer-events: none; user-select: none;
+}
 
 #toolbar {
   position: relative; flex-shrink: 0; min-height: 48px;
@@ -261,7 +266,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 
 <main class="app-main">
   <section class="viewer-section">
-    <div id="viewer" data-i18n-aria="viewer.aria" aria-label="Vue 3D du modèle converti"></div>
+    <div id="viewer" data-i18n-aria="viewer.aria" aria-label="Vue 3D du modèle converti"><span class="watermark">BBMV</span></div>
     <div id="env-panel">
       <div class="ep-head">
         <h3 data-i18n="envPanel.title">Environnement</h3>
@@ -764,9 +769,9 @@ async function bbmodelToScene(data) {
 
   const material = new THREE.MeshStandardMaterial({
     map: texData?.texture || null,
-    side: THREE.DoubleSide,
+    side: THREE.FrontSide,
     metalness: 0, roughness: 1,
-    transparent: true, alphaTest: 0.5,
+    transparent: false, alphaTest: 0.5,
   });
 
   // Element map
@@ -1174,7 +1179,7 @@ function getViewerSize() {
   const h = Math.max(1, container.clientHeight || 1);
   return { w, h };
 }
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, logarithmicDepthBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const vs = getViewerSize();
 renderer.setSize(vs.w, vs.h);
@@ -1719,6 +1724,16 @@ async function exportViewerGif() {
       snap.width = bufW;
       snap.height = bufH;
       snapCtx.drawImage(renderer.domElement, 0, 0);
+
+      const wmSize = Math.max(12, Math.round(bufH * 0.04));
+      snapCtx.save();
+      snapCtx.font = `800 ${wmSize}px 'Segoe UI', system-ui, sans-serif`;
+      snapCtx.letterSpacing = '1.5px';
+      snapCtx.fillStyle = 'rgba(255,255,255,0.18)';
+      snapCtx.textAlign = 'right';
+      snapCtx.textBaseline = 'bottom';
+      snapCtx.fillText('BBMV', bufW - 10, bufH - 8);
+      snapCtx.restore();
 
       const imageData = snapCtx.getImageData(0, 0, bufW, bufH);
       const palette = quantize(imageData.data, 256, { format: 'rgb565' });
