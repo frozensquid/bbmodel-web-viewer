@@ -285,6 +285,55 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
 }
 
+#model-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 300px; z-index: 17;
+  background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  display: none; flex-direction: column; overflow: hidden; font-size: 12px;
+}
+#model-panel.open { display: flex; }
+#model-panel .mp-head {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+#model-panel .mp-head h3 { font-size: 13px; font-weight: 700; color: #b8c0ff; margin: 0; }
+#model-panel .mp-close {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+#model-panel .mp-close:hover { color: #fff; }
+#model-panel .mp-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+#model-panel .mp-add {
+  margin: 0 14px 12px; padding: 8px; border-radius: 7px; border: 1px dashed rgba(124,138,255,0.4);
+  background: rgba(124,138,255,0.06); color: #b0b8ff; font-size: 12px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+#model-panel .mp-add:hover { background: rgba(124,138,255,0.15); border-color: #7c8aff; }
+#model-panel .mp-hint {
+  padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 10px; color: #555; line-height: 1.5;
+}
+.mc-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; transition: border-color 0.15s; cursor: pointer;
+}
+.mc-card.selected { border-color: rgba(124,138,255,0.6); background: rgba(124,138,255,0.08); }
+.mc-card .mc-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.mc-card .mc-name { font-weight: 600; color: #dde; font-size: 11px; flex: 1; word-break: break-all; }
+.mc-card .mc-kind { font-size: 9px; color: #666; text-transform: uppercase; }
+.mc-card .mc-del {
+  background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.mc-card .mc-del:hover { color: #f66; }
+.mc-card .mc-modes { display: flex; gap: 4px; margin-top: 4px; }
+.mc-card .mc-mode-btn {
+  flex: 1; padding: 4px 0; border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: #999; font-size: 11px; cursor: pointer; text-align: center;
+}
+.mc-card .mc-mode-btn:hover { background: rgba(255,255,255,0.08); color: #ccc; }
+.mc-card .mc-mode-btn.active {
+  background: rgba(124,138,255,0.2); border-color: rgba(124,138,255,0.45); color: #c8d0ff;
+}
+
 #cam-panel {
   position: absolute; top: 0; right: 0; bottom: 0; width: 280px; z-index: 16;
   background: rgba(18,18,28,0.95); backdrop-filter: blur(14px);
@@ -346,6 +395,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   <span id="model-name" data-i18n="toolbar.noModel">Aucun modèle</span>
   <span class="sep"></span>
   <button type="button" class="btn" id="btn-env" data-i18n="toolbar.env" data-i18n-title="toolbar.envTitle" title="Fond, sol et grille">Environnement</button>
+  <button type="button" class="btn" id="btn-models" data-i18n="toolbar.models" data-i18n-title="toolbar.modelsTitle" title="Modèles 3D">Modèles</button>
   <button type="button" class="btn" id="btn-images" data-i18n="toolbar.images" data-i18n-title="toolbar.imagesTitle" title="Ajouter et positionner des images">Images</button>
   <button type="button" class="btn" id="btn-lights" data-i18n="toolbar.lights" data-i18n-title="toolbar.lightsTitle" title="Gérer les sources de lumière">Lumières</button>
   <button type="button" class="btn" id="btn-cam" data-i18n="toolbar.camera" data-i18n-title="toolbar.cameraTitle" title="Caméra d'export GIF">🎬 Caméra</button>
@@ -417,6 +467,15 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         </div>
       </div>
     </div>
+    <div id="model-panel">
+      <div class="mp-head">
+        <h3 data-i18n="modelPanel.title">Modèles</h3>
+        <button type="button" class="mp-close" id="mp-close" data-i18n-title="modelPanel.close" title="Fermer">×</button>
+      </div>
+      <div class="mp-body" id="mp-body"></div>
+      <button type="button" class="mp-add" id="mp-add" data-i18n="modelPanel.add">+ Ajouter .bbmodel / .glb</button>
+      <div class="mp-hint" data-i18n="modelPanel.hint">Sélectionnez un modèle pour le déplacer ou le tourner avec le gizmo.</div>
+    </div>
     <div id="cam-panel">
       <div class="cp-head">
         <h3 data-i18n="camPanel.title">Caméra d'export</h3>
@@ -479,7 +538,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 <div id="dropzone">
   <div class="drop-area" id="drop-area">
     <div class="icon">&#128230;</div>
-    <h2 data-i18n="drop.title">Glisse un .bbmodel ou .bbmv ici</h2>
+    <h2 data-i18n="drop.title">Glisse un .bbmodel, .glb ou .bbmv ici</h2>
     <p data-i18n="drop.subtitle">ou clique pour parcourir</p>
   </div>
 </div>
@@ -538,6 +597,18 @@ const I18N_DATA = {
     'toolbar.exportProjectTitle': 'Exporter la configuration complète du projet (.bbmv)',
     'toolbar.importProject': 'Importer projet',
     'toolbar.importProjectTitle': 'Importer un projet sauvegardé (.bbmv)',
+    'toolbar.models': 'Modèles',
+    'toolbar.modelsTitle': 'Ajouter et placer des modèles 3D',
+    'modelPanel.title': 'Modèles',
+    'modelPanel.close': 'Fermer',
+    'modelPanel.add': '+ Ajouter .bbmodel / .glb',
+    'modelPanel.hint': 'Sélectionnez un modèle pour le déplacer ou le tourner avec le gizmo.',
+    'modelPanel.empty': 'Aucun modèle',
+    'modelPanel.kindBbmodel': 'BBModel',
+    'modelPanel.kindGlb': 'GLB',
+    'modelPanel.move': 'Déplacer',
+    'modelPanel.rotate': 'Tourner',
+    'modelPanel.delete': 'Supprimer',
     'preset.darkBlue': 'Bleu nuit',
     'preset.black': 'Noir',
     'preset.brown': 'Brun',
@@ -569,7 +640,7 @@ const I18N_DATA = {
     'toolbar.exportProjectTitle': 'Exporter la configuration complète du projet (.bbmv)',
     'toolbar.importProject': 'Importer projet',
     'toolbar.importProjectTitle': 'Importer un projet sauvegardé (.bbmv)',
-    'drop.title': 'Glisse un .bbmodel ou .bbmv ici',
+    'drop.title': 'Glisse un .bbmodel, .glb ou .bbmv ici',
     'loading.importingProject': 'Importation du projet\u2026',
     'drop.subtitle': 'ou clique pour parcourir',
     'anim.none': '-- aucune --',
@@ -643,6 +714,18 @@ const I18N_DATA = {
     'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
     'toolbar.importProject': 'Import project',
     'toolbar.importProjectTitle': 'Import a saved project (.bbmv)',
+    'toolbar.models': 'Models',
+    'toolbar.modelsTitle': 'Add and place 3D models',
+    'modelPanel.title': 'Models',
+    'modelPanel.close': 'Close',
+    'modelPanel.add': '+ Add .bbmodel / .glb',
+    'modelPanel.hint': 'Select a model to move or rotate it with the gizmo.',
+    'modelPanel.empty': 'No models',
+    'modelPanel.kindBbmodel': 'BBModel',
+    'modelPanel.kindGlb': 'GLB',
+    'modelPanel.move': 'Move',
+    'modelPanel.rotate': 'Rotate',
+    'modelPanel.delete': 'Delete',
     'preset.darkBlue': 'Dark blue',
     'preset.black': 'Black',
     'preset.brown': 'Brown',
@@ -674,7 +757,7 @@ const I18N_DATA = {
     'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
     'toolbar.importProject': 'Import project',
     'toolbar.importProjectTitle': 'Import a saved project (.bbmv)',
-    'drop.title': 'Drop a .bbmodel or .bbmv here',
+    'drop.title': 'Drop a .bbmodel, .glb or .bbmv here',
     'loading.importingProject': 'Importing project\u2026',
     'drop.subtitle': 'or click to browse',
     'anim.none': '-- none --',
@@ -772,14 +855,14 @@ function applyI18nToDom() {
 }
 
 function refreshDynamicTexts() {
-  if (currentModel) {
+  if (hasAnyModel()) {
     const infoEl = document.getElementById('info');
     if (infoEl && infoEl.textContent) {
       const m = infoEl.textContent.match(/^(\d+)/);
       if (m) {
-        const box = new THREE.Box3().setFromObject(currentModel);
+        const box = getModelsUnionBox();
         const s = box.getSize(new THREE.Vector3());
-        const mode = lastGlbBlob ? t('info.modeGlb') : t('info.modeDirect');
+        const mode = t('info.modeGlb');
         infoEl.textContent = t('info.display', m[1], s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), mode);
       }
     }
@@ -793,7 +876,7 @@ function loadLang(lang) {
   currentLang = lang;
   try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
   applyI18nToDom();
-  if (i18nReady) { rebuildLightPanel(); rebuildCamPanel(); rebuildImagePanel(); refreshDynamicTexts(); }
+  if (i18nReady) { rebuildLightPanel(); rebuildCamPanel(); rebuildImagePanel(); rebuildModelPanel(); refreshDynamicTexts(); }
 }
 
 {
@@ -1079,8 +1162,7 @@ let lastGlbFileStem = 'model';
 function setGlbDownloadState(blob, stem) {
   lastGlbBlob = blob;
   lastGlbFileStem = stem || 'model';
-  const expBtn = document.getElementById('btn-export-proj');
-  if (expBtn) expBtn.disabled = !blob;
+  syncExportProjectButton();
 }
 
 // ─── Animation engine ───
@@ -1491,14 +1573,95 @@ function setGridVisible(on) {
   try { localStorage.setItem(GRID_STORAGE_KEY, on ? '1' : '0'); } catch (_) {}
 }
 
-let currentModel = null;
+const editorModels = [];
+let animModelEntry = null;
+let selectedModelIdx = -1;
+let modelGizmoMode = 'translate';
+
+function hasAnyModel() {
+  return editorModels.length > 0;
+}
+
+function getModelsUnionBox(targetBox) {
+  const box = targetBox || new THREE.Box3();
+  box.makeEmpty();
+  for (const e of editorModels) {
+    box.union(new THREE.Box3().setFromObject(e.group));
+  }
+  return box;
+}
+
+function syncExportProjectButton() {
+  const expBtn = document.getElementById('btn-export-proj');
+  if (expBtn) expBtn.disabled = editorModels.length === 0;
+}
+
+function clearAnimationState() {
+  animList = [];
+  activeAnim = null;
+  animPlaying = false;
+  animNodeMap = {};
+  baseTransforms = {};
+  animModelEntry = null;
+  animTime = 0;
+  if (animSelect) animSelect.innerHTML = '';
+  if (animBar) animBar.classList.remove('visible');
+  updateAnimUI();
+}
+
+function updateModelNameToolbar() {
+  const el = document.getElementById('model-name');
+  if (!el) return;
+  if (editorModels.length === 0) {
+    el.textContent = t('toolbar.noModel');
+    el.setAttribute('data-i18n', 'toolbar.noModel');
+  } else if (editorModels.length === 1) {
+    el.textContent = editorModels[0].name;
+    el.removeAttribute('data-i18n');
+  } else {
+    el.textContent = editorModels[0].name + ' +' + (editorModels.length - 1);
+    el.removeAttribute('data-i18n');
+  }
+}
+
+function registerEditorModel(displayRoot, opts) {
+  const group = new THREE.Group();
+  group.userData.isEditorModel = true;
+  group.userData.modelIdx = editorModels.length;
+  group.add(displayRoot);
+  scene.add(group);
+
+  const entry = {
+    id: opts.id ?? Date.now(),
+    group,
+    root: displayRoot,
+    name: opts.name || 'Model',
+    kind: opts.kind || 'glb',
+    glbBlob: opts.glbBlob || null,
+    elCount: opts.elCount ?? null,
+    bbmodelAnimData: opts.bbmodelAnimData ?? null,
+  };
+  editorModels.push(entry);
+  editorModels.forEach((e, i) => { e.group.userData.modelIdx = i; });
+
+  displayRoot.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+
+  refreshShadowSystem();
+  syncExportProjectButton();
+  const gifBtn = document.getElementById('btn-gif');
+  if (gifBtn) gifBtn.disabled = false;
+  document.getElementById('dropzone')?.classList.add('hidden');
+  updateModelNameToolbar();
+  rebuildModelPanel();
+  return entry;
+}
 
 function refreshShadowSystem() {
   const anyShadow = userLights.some(e => e.castShadow);
   renderer.shadowMap.enabled = anyShadow;
   shadowGround.visible = anyShadow;
-  if (currentModel) {
-    currentModel.traverse(o => {
+  for (const e of editorModels) {
+    e.root.traverse(o => {
       if (o.isMesh) o.castShadow = anyShadow;
     });
   }
@@ -1523,7 +1686,7 @@ const btnEnv = document.getElementById('btn-env');
 function toggleEnvPanel(open) {
   const isOpen = envPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleImagePanel(false); if (typeof toggleCamPanel === 'function') toggleCamPanel(false); }
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleModelPanel(false); if (typeof toggleCamPanel === 'function') toggleCamPanel(false); }
   envPanel.classList.toggle('open', target);
   if (btnEnv) btnEnv.classList.toggle('active', target);
 }
@@ -1553,6 +1716,7 @@ loadViewerPrefs();
 
 // ─── Light Editor ───
 const lightPanel = document.getElementById('light-panel');
+const modelPanel = document.getElementById('model-panel');
 const lpBody = document.getElementById('lp-body');
 const btnLights = document.getElementById('btn-lights');
 const lpClose = document.getElementById('lp-close');
@@ -1580,7 +1744,7 @@ tfControls.addEventListener('objectChange', () => {
 function toggleLightPanel(open) {
   const isOpen = lightPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleImagePanel(false); toggleCamPanel(false); }
+  if (target) { toggleImagePanel(false); toggleCamPanel(false); toggleModelPanel(false); }
   lightPanel.classList.toggle('open', target);
   if (btnLights) btnLights.classList.toggle('active', target);
   if (!target) deselectLight();
@@ -1640,6 +1804,7 @@ function selectLight(idx) {
   if (selectedLightIdx === idx) return;
   deselectImage();
   deselectExportCam();
+  deselectModel();
   selectedLightIdx = idx;
   tfControls.setMode('translate');
   const entry = userLights[idx];
@@ -1759,8 +1924,8 @@ function rebuildLightPanel() {
 if (lpAdd) {
   lpAdd.addEventListener('click', () => {
     let cx = 0, cy = 1.5, cz = 0;
-    if (currentModel) {
-      const box = new THREE.Box3().setFromObject(currentModel);
+    if (hasAnyModel()) {
+      const box = getModelsUnionBox();
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       cx = center.x;
@@ -1779,7 +1944,8 @@ const lightMouse = new THREE.Vector2();
 function onViewerPointerDown(e) {
   const lpOpen = lightPanel.classList.contains('open');
   const ipOpen = imagePanel && imagePanel.classList.contains('open');
-  if (!lpOpen && !ipOpen) return;
+  const mpOpen = modelPanel && modelPanel.classList.contains('open');
+  if (!lpOpen && !ipOpen && !mpOpen) return;
   if (tfControls.dragging) return;
   const rect = container.getBoundingClientRect();
   lightMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1801,6 +1967,15 @@ function onViewerPointerDown(e) {
     if (hits.length > 0) {
       const idx = hits[0].object.userData.imageIdx;
       if (idx !== undefined) selectImage(idx);
+    }
+  }
+  if (mpOpen && editorModels.length > 0) {
+    const roots = editorModels.map(m => m.group);
+    const hits = lightRaycaster.intersectObjects(roots, true);
+    if (hits.length > 0) {
+      let obj = hits[0].object;
+      while (obj && !obj.userData.isEditorModel) obj = obj.parent;
+      if (obj && obj.userData.modelIdx !== undefined) selectModel(obj.userData.modelIdx);
     }
   }
 }
@@ -1832,7 +2007,7 @@ let camGizmoMode = 'translate';
 function toggleCamPanel(open) {
   const isOpen = camPanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleImagePanel(false); }
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleModelPanel(false); }
   camPanel.classList.toggle('open', target);
   if (btnCam) btnCam.classList.toggle('active', target);
   if (!target) deselectExportCam();
@@ -1855,6 +2030,7 @@ function setExportCamEnabled(on) {
 function selectExportCam() {
   deselectLight();
   deselectImage();
+  deselectModel();
   tfControls.setMode(camGizmoMode);
   tfControls.attach(exportCam);
 }
@@ -1979,10 +2155,144 @@ let selectedImageIdx = -1;
 let imageIdCounter = 0;
 let currentGizmoMode = 'translate';
 
+const mpBody = document.getElementById('mp-body');
+const btnModels = document.getElementById('btn-models');
+const mpClose = document.getElementById('mp-close');
+const mpAdd = document.getElementById('mp-add');
+
+function toggleModelPanel(open) {
+  const isOpen = modelPanel.classList.contains('open');
+  const target = open !== undefined ? open : !isOpen;
+  if (target) { toggleLightPanel(false); toggleImagePanel(false); toggleCamPanel(false); }
+  modelPanel.classList.toggle('open', target);
+  if (btnModels) btnModels.classList.toggle('active', target);
+  if (!target) deselectModel();
+}
+
+function removeEditorModel(idx) {
+  if (idx < 0 || idx >= editorModels.length) return;
+  const entry = editorModels[idx];
+  if (selectedModelIdx === idx) {
+    selectedModelIdx = -1;
+    if (tfControls.object && tfControls.object.userData && tfControls.object.userData.isEditorModel) tfControls.detach();
+  } else if (selectedModelIdx > idx) {
+    selectedModelIdx--;
+  }
+  if (animModelEntry === entry) clearAnimationState();
+  scene.remove(entry.group);
+  disposeObject3D(entry.group);
+  editorModels.splice(idx, 1);
+  editorModels.forEach((e, i) => { e.group.userData.modelIdx = i; });
+  if (selectedModelIdx >= editorModels.length) selectedModelIdx = -1;
+  refreshShadowSystem();
+  syncExportProjectButton();
+  rebuildModelPanel();
+  updateModelNameToolbar();
+  if (editorModels.length === 0) {
+    document.getElementById('dropzone')?.classList.remove('hidden');
+    const gifBtn = document.getElementById('btn-gif');
+    if (gifBtn) gifBtn.disabled = true;
+    lastGlbBlob = null;
+  }
+}
+
+function selectModel(idx) {
+  if (idx < 0 || idx >= editorModels.length) return;
+  if (selectedModelIdx === idx) return;
+  deselectLight();
+  deselectImage();
+  deselectExportCam();
+  selectedModelIdx = idx;
+  tfControls.setMode(modelGizmoMode);
+  tfControls.attach(editorModels[idx].group);
+  rebuildModelPanel();
+}
+
+function deselectModel() {
+  if (selectedModelIdx === -1) return;
+  selectedModelIdx = -1;
+  if (tfControls.object && tfControls.object.userData && tfControls.object.userData.isEditorModel) tfControls.detach();
+  rebuildModelPanel();
+}
+
+function setModelGizmoMode(mode) {
+  modelGizmoMode = (mode === 'rotate') ? 'rotate' : 'translate';
+  tfControls.setMode(modelGizmoMode);
+  rebuildModelPanel();
+}
+
+function rebuildModelPanel() {
+  if (!mpBody) return;
+  mpBody.innerHTML = '';
+  if (editorModels.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:#555;text-align:center;padding:24px 8px;font-size:12px;';
+    empty.textContent = t('modelPanel.empty');
+    mpBody.appendChild(empty);
+    return;
+  }
+  editorModels.forEach((entry, i) => {
+    const card = document.createElement('div');
+    card.className = 'mc-card' + (i === selectedModelIdx ? ' selected' : '');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.mc-del') || e.target.closest('.mc-mode-btn')) return;
+      selectModel(i);
+    });
+    const hdr = document.createElement('div');
+    hdr.className = 'mc-header';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'mc-name';
+    nameEl.textContent = entry.name;
+    hdr.appendChild(nameEl);
+    const kind = document.createElement('span');
+    kind.className = 'mc-kind';
+    kind.textContent = entry.kind === 'bbmodel' ? t('modelPanel.kindBbmodel') : t('modelPanel.kindGlb');
+    hdr.appendChild(kind);
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'mc-del';
+    del.title = t('modelPanel.delete');
+    del.textContent = '\u2715';
+    del.addEventListener('click', (ev) => { ev.stopPropagation(); removeEditorModel(i); });
+    hdr.appendChild(del);
+    card.appendChild(hdr);
+    if (i === selectedModelIdx) {
+      const modes = document.createElement('div');
+      modes.className = 'mc-modes';
+      const btnM = document.createElement('button');
+      btnM.type = 'button';
+      btnM.className = 'mc-mode-btn' + (modelGizmoMode === 'translate' ? ' active' : '');
+      btnM.textContent = t('modelPanel.move');
+      btnM.addEventListener('click', (ev) => { ev.stopPropagation(); setModelGizmoMode('translate'); selectModel(i); });
+      modes.appendChild(btnM);
+      const btnR = document.createElement('button');
+      btnR.type = 'button';
+      btnR.className = 'mc-mode-btn' + (modelGizmoMode === 'rotate' ? ' active' : '');
+      btnR.textContent = t('modelPanel.rotate');
+      btnR.addEventListener('click', (ev) => { ev.stopPropagation(); setModelGizmoMode('rotate'); selectModel(i); });
+      modes.appendChild(btnR);
+      card.appendChild(modes);
+    }
+    mpBody.appendChild(card);
+  });
+}
+
+if (btnModels) btnModels.addEventListener('click', () => toggleModelPanel());
+if (mpClose) mpClose.addEventListener('click', () => toggleModelPanel(false));
+if (mpAdd) {
+  mpAdd.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.bbmodel,.glb';
+    input.onchange = () => { if (input.files[0]) handleDroppedModelFile(input.files[0]); };
+    input.click();
+  });
+}
+
 function toggleImagePanel(open) {
   const isOpen = imagePanel.classList.contains('open');
   const target = open !== undefined ? open : !isOpen;
-  if (target) { toggleLightPanel(false); toggleCamPanel(false); }
+  if (target) { toggleLightPanel(false); toggleCamPanel(false); toggleModelPanel(false); }
   imagePanel.classList.toggle('open', target);
   if (btnImages) btnImages.classList.toggle('active', target);
   if (!target) deselectImage();
@@ -2014,8 +2324,8 @@ function createUserImage(file) {
       mesh.receiveShadow = false;
 
       let cx = 0, cy = 0.5, cz = 0.5;
-      if (currentModel) {
-        const box = new THREE.Box3().setFromObject(currentModel);
+      if (hasAnyModel()) {
+        const box = getModelsUnionBox();
         const center = box.getCenter(new THREE.Vector3());
         cx = center.x + (Math.random() - 0.5) * 0.4;
         cy = center.y;
@@ -2060,6 +2370,7 @@ function selectImage(idx) {
   if (selectedImageIdx === idx) return;
   deselectLight();
   deselectExportCam();
+  deselectModel();
   selectedImageIdx = idx;
   const entry = userImages[idx];
   tfControls.setMode(currentGizmoMode);
@@ -2264,7 +2575,7 @@ function restoreViewerAfterGif(restoreSel, restoreTime, restorePlaying) {
 }
 
 async function exportViewerGif() {
-  if (!currentModel) return;
+  if (!hasAnyModel()) return;
 
   let numFrames = parseInt(document.getElementById('gif-frames').value, 10);
   let delayMs = parseInt(document.getElementById('gif-delay').value, 10);
@@ -2301,6 +2612,8 @@ async function exportViewerGif() {
   const camHelperWas = exportCamHelper.visible;
   exportCamHelper.visible = false;
   const gizmoWasAttached = !!tfControls.object;
+  const gizmoAttachedObject = tfControls.object;
+  const gizmoSavedMode = tfControls.mode;
   if (gizmoWasAttached) tfControls.detach();
 
   const delaySec = delayMs / 1000;
@@ -2408,8 +2721,9 @@ async function exportViewerGif() {
     // Restore light helpers, cam helper & gizmo
     userLights.forEach((e, i) => { e.helper.visible = helperWasVisible[i] ?? true; });
     exportCamHelper.visible = camHelperWas;
-    if (gizmoWasAttached && selectedLightIdx >= 0 && selectedLightIdx < userLights.length) {
-      tfControls.attach(userLights[selectedLightIdx].helper);
+    if (gizmoWasAttached && gizmoAttachedObject) {
+      tfControls.setMode(gizmoSavedMode || 'translate');
+      tfControls.attach(gizmoAttachedObject);
     }
 
     renderer.render(scene, camera);
@@ -2427,7 +2741,7 @@ if (gifFramesInput) gifFramesInput.addEventListener('input', updateGifModalHints
 
 if (btnGif) {
   btnGif.addEventListener('click', () => {
-    if (!currentModel || btnGif.disabled) return;
+    if (!hasAnyModel() || btnGif.disabled) return;
     updateGifModalHints();
     gifModal.classList.add('open');
     gifModal.setAttribute('aria-hidden', 'false');
@@ -2536,35 +2850,31 @@ async function handleFile(file) {
 
   loadingEl.classList.add('active');
   loadingMsg.textContent = '';
-  document.getElementById('dropzone').classList.add('hidden');
+  if (editorModels.length === 0) document.getElementById('dropzone').classList.add('hidden');
 
   try {
     const text = await file.text();
     const data = JSON.parse(text);
 
-    if (currentModel) {
-      scene.remove(currentModel);
-      disposeObject3D(currentModel);
-      currentModel = null;
-    }
-
+    const wasEmpty = editorModels.length === 0;
     loadingMsg.textContent = t('loading.readingModel');
     const rawRoot = await bbmodelToScene(data);
     const savedUuidToName = collectUuidToBoneName(rawRoot.userData.nodeMap);
 
     let displayRoot;
     let nodeMapForAnim;
+    let glbBlob = null;
+    const stem = (data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, ''))
+      .replace(/[^\w\-]+/g, '_') || 'model';
 
     try {
       loadingMsg.textContent = t('loading.convertingGlb');
       const glbBuffer = await exportRootToGlbBuffer(rawRoot);
-      const stem = (data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, ''))
-        .replace(/[^\w\-]+/g, '_') || 'model';
-      const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
-      setGlbDownloadState(blob, stem);
+      glbBlob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+      setGlbDownloadState(glbBlob, stem);
 
       loadingMsg.textContent = t('loading.loadingGlb');
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(glbBlob);
       const loader = new GLTFLoader();
       const gltf = await loader.loadAsync(url);
       URL.revokeObjectURL(url);
@@ -2577,50 +2887,96 @@ async function handleFile(file) {
       setGlbDownloadState(null);
       displayRoot = rawRoot;
       nodeMapForAnim = rawRoot.userData.nodeMap || {};
+      glbBlob = null;
       alert(t('error.glbFailed') + (glbErr.message || glbErr));
     }
 
-    scene.add(displayRoot);
-    currentModel = displayRoot;
-
-    displayRoot.traverse(o => {
-      if (o.isMesh) {
-        o.receiveShadow = true;
-      }
+    const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
+    const entry = registerEditorModel(displayRoot, {
+      name: stem,
+      kind: 'bbmodel',
+      glbBlob,
+      elCount,
     });
-    refreshShadowSystem();
 
-    const gifBtn = document.getElementById('btn-gif');
-    if (gifBtn) gifBtn.disabled = false;
-    const expProjBtn = document.getElementById('btn-export-proj');
-    if (expProjBtn) expProjBtn.disabled = false;
-
-    setupAnimations(data, nodeMapForAnim);
-
-    frameModel(displayRoot);
-    setTurntable(true);
-    onViewerResize();
-
-    const nameEl = document.getElementById('model-name');
-    if (nameEl) {
-      nameEl.textContent = data.name != null ? String(data.name) : file.name.replace(/\.bbmodel$/i, '');
-      nameEl.removeAttribute('data-i18n');
+    if (!animModelEntry) {
+      setupAnimations(data, nodeMapForAnim);
+      animModelEntry = entry;
     }
 
-    const box = new THREE.Box3().setFromObject(displayRoot);
+    entry.bbmodelAnimData = (data.animations && data.animations.length > 0)
+      ? { animations: JSON.parse(JSON.stringify(data.animations)) }
+      : null;
+
+    if (wasEmpty) {
+      frameModel(entry.group);
+      setTurntable(true);
+    }
+    onViewerResize();
+
+    const box = getModelsUnionBox();
     const s = box.getSize(new THREE.Vector3());
-    const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
+    const totalCubes = editorModels.reduce((a, e) => a + (e.elCount || 0), 0);
     const infoEl = document.getElementById('info');
     if (infoEl) {
-      const mode = lastGlbBlob ? t('info.modeGlb') : t('info.modeDirect');
-      infoEl.textContent = t('info.display', elCount, s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), mode);
+      const mode = entry.glbBlob ? t('info.modeGlb') : t('info.modeDirect');
+      infoEl.textContent = t('info.display', totalCubes, s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), mode);
     }
   } catch (err) {
     console.error(err);
     alert(t('error.loading') + err.message);
-    document.getElementById('dropzone').classList.remove('hidden');
+    if (editorModels.length === 0) document.getElementById('dropzone').classList.remove('hidden');
     setGlbDownloadState(null);
-    if (!currentModel) {
+    if (!hasAnyModel()) {
+      const gifBtn = document.getElementById('btn-gif');
+      if (gifBtn) gifBtn.disabled = true;
+    }
+  } finally {
+    loadingEl.classList.remove('active');
+    loadingMsg.textContent = '';
+  }
+}
+
+async function handleGlbFile(file) {
+  const name = (file && file.name) ? file.name.toLowerCase() : '';
+  if (!file || !name.endsWith('.glb')) return;
+
+  loadingEl.classList.add('active');
+  loadingMsg.textContent = '';
+  if (editorModels.length === 0) document.getElementById('dropzone').classList.add('hidden');
+
+  try {
+    const wasEmpty = editorModels.length === 0;
+    loadingMsg.textContent = t('loading.loadingGlb');
+    const buf = await file.arrayBuffer();
+    const glbBlob = new Blob([buf], { type: 'model/gltf-binary' });
+    const url = URL.createObjectURL(glbBlob);
+    const loader = new GLTFLoader();
+    const gltf = await loader.loadAsync(url);
+    URL.revokeObjectURL(url);
+
+    const stem = file.name.replace(/\.glb$/i, '').replace(/[^\w\-]+/g, '_') || 'model';
+    setGlbDownloadState(glbBlob, stem);
+    const entry = registerEditorModel(gltf.scene, { name: stem, kind: 'glb', glbBlob, elCount: null });
+
+    if (wasEmpty) {
+      frameModel(entry.group);
+      setTurntable(true);
+    }
+    onViewerResize();
+
+    const box = getModelsUnionBox();
+    const s = box.getSize(new THREE.Vector3());
+    const totalCubes = editorModels.reduce((a, e) => a + (e.elCount || 0), 0);
+    const infoEl = document.getElementById('info');
+    if (infoEl) {
+      infoEl.textContent = t('info.display', totalCubes || '?', s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), t('info.modeGlb'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert(t('error.loading') + (err.message || err));
+    if (editorModels.length === 0) document.getElementById('dropzone').classList.remove('hidden');
+    if (!hasAnyModel()) {
       const gifBtn = document.getElementById('btn-gif');
       if (gifBtn) gifBtn.disabled = true;
     }
@@ -2637,7 +2993,7 @@ const dropArea = document.getElementById('drop-area');
 
 dropArea.addEventListener('click', () => {
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = '.bbmodel,.bbmv';
+  input.type = 'file'; input.accept = '.bbmodel,.bbmv,.glb';
   input.onchange = () => { if (input.files[0]) handleDroppedFile(input.files[0]); };
   input.click();
 });
@@ -2659,20 +3015,47 @@ function handleDroppedFile(file) {
   const name = file.name.toLowerCase();
   if (name.endsWith('.bbmv')) return importProject(file);
   if (name.endsWith('.bbmodel')) return handleFile(file);
+  if (name.endsWith('.glb')) return handleGlbFile(file);
 }
 
-function gatherProjectData() {
-  const proj = { version: 1 };
+function handleDroppedModelFile(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.bbmodel')) return handleFile(file);
+  if (name.endsWith('.glb')) return handleGlbFile(file);
+}
 
-  // Model GLB
-  if (lastGlbBlob) {
-    return lastGlbBlob.arrayBuffer().then(buf => {
-      proj.modelGlb = arrayBufferToBase64(buf);
-      proj.modelName = lastGlbFileStem;
-      return finishGatherProject(proj);
-    });
+async function gatherProjectData() {
+  const proj = { version: 2 };
+  proj.models = [];
+  for (const e of editorModels) {
+    let blob = e.glbBlob;
+    if (!blob) {
+      try {
+        const buf = await exportRootToGlbBuffer(e.root);
+        blob = new Blob([buf], { type: 'model/gltf-binary' });
+        e.glbBlob = blob;
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+    if (!blob) continue;
+    const buf = await blob.arrayBuffer();
+    const row = {
+      name: e.name,
+      kind: e.kind,
+      glb: arrayBufferToBase64(buf),
+      position: e.group.position.toArray(),
+      rotation: [e.group.rotation.x, e.group.rotation.y, e.group.rotation.z],
+      scale: e.group.scale.toArray(),
+    };
+    if (e.elCount != null) row.elCount = e.elCount;
+    if (e.bbmodelAnimData?.animations?.length > 0) {
+      row.animations = JSON.parse(JSON.stringify(e.bbmodelAnimData.animations));
+    }
+    proj.models.push(row);
   }
-  return Promise.resolve(finishGatherProject(proj));
+  return finishGatherProject(proj);
 }
 
 function finishGatherProject(proj) {
@@ -2752,7 +3135,7 @@ async function exportProject() {
   const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = (lastGlbFileStem || 'project') + '.bbmv';
+  a.download = (editorModels[0]?.name || lastGlbFileStem || 'project') + '.bbmv';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
@@ -2767,8 +3150,10 @@ async function importProject(file) {
     const proj = JSON.parse(text);
 
     // Clear existing state
+    while (editorModels.length) removeEditorModel(0);
     while (userLights.length) removeUserLight(0);
     while (userImages.length) removeUserImage(0);
+    document.getElementById('dropzone').classList.add('hidden');
 
     // Language
     if (proj.lang) {
@@ -2788,47 +3173,65 @@ async function importProject(file) {
     // Grid
     if (proj.gridVisible !== undefined) setGridVisible(proj.gridVisible);
 
-    // Load model GLB
-    if (proj.modelGlb) {
+    // Load models (v2: proj.models, v1: proj.modelGlb)
+    if (proj.models && proj.models.length > 0) {
+      loadingMsg.textContent = t('loading.loadingGlb');
+      const loader = new GLTFLoader();
+      for (const m of proj.models) {
+        const buf = base64ToArrayBuffer(m.glb);
+        const blob = new Blob([buf], { type: 'model/gltf-binary' });
+        const url = URL.createObjectURL(blob);
+        const gltf = await loader.loadAsync(url);
+        URL.revokeObjectURL(url);
+        const entry = registerEditorModel(gltf.scene, {
+          name: m.name || 'model',
+          kind: m.kind || 'glb',
+          glbBlob: blob,
+        });
+        if (m.position) entry.group.position.fromArray(m.position);
+        if (m.rotation) entry.group.rotation.set(m.rotation[0], m.rotation[1], m.rotation[2]);
+        if (m.scale) entry.group.scale.fromArray(m.scale);
+        if (m.elCount != null) entry.elCount = m.elCount;
+        if (m.animations && m.animations.length > 0) {
+          entry.bbmodelAnimData = { animations: m.animations };
+        }
+      }
+      for (const entry of editorModels) {
+        if (entry.bbmodelAnimData?.animations?.length > 0) {
+          const nodeMap = buildNodeMapFromLoadedGltf(entry.root);
+          setupAnimations({ animations: entry.bbmodelAnimData.animations }, nodeMap);
+          animModelEntry = entry;
+          break;
+        }
+      }
+      rebuildModelPanel();
+      if (editorModels[0]) {
+        setGlbDownloadState(editorModels[0].glbBlob, editorModels[0].name);
+        frameModel(editorModels[0].group);
+      }
+      const box = getModelsUnionBox();
+      const s = box.getSize(new THREE.Vector3());
+      const totalCubes = editorModels.reduce((a, e) => a + (e.elCount || 0), 0);
+      const infoEl = document.getElementById('info');
+      if (infoEl) {
+        infoEl.textContent = t('info.display', totalCubes || '?', s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), t('info.modeGlb'));
+      }
+    } else if (proj.modelGlb) {
       loadingMsg.textContent = t('loading.loadingGlb');
       const buf = base64ToArrayBuffer(proj.modelGlb);
       const blob = new Blob([buf], { type: 'model/gltf-binary' });
-
-      if (currentModel) {
-        scene.remove(currentModel);
-        disposeObject3D(currentModel);
-        currentModel = null;
-      }
-
       const url = URL.createObjectURL(blob);
       const loader = new GLTFLoader();
       const gltf = await loader.loadAsync(url);
       URL.revokeObjectURL(url);
-
-      const displayRoot = gltf.scene;
-      scene.add(displayRoot);
-      currentModel = displayRoot;
-
-      displayRoot.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
-
-      lastGlbBlob = blob;
-      lastGlbFileStem = proj.modelName || 'model';
-
-      const nameEl = document.getElementById('model-name');
-      if (nameEl) {
-        nameEl.textContent = proj.modelName || 'model';
-        nameEl.removeAttribute('data-i18n');
-      }
-
-      frameModel(displayRoot);
-
-      const gifBtn = document.getElementById('btn-gif');
-      if (gifBtn) gifBtn.disabled = false;
-      const expBtn = document.getElementById('btn-export-proj');
-      if (expBtn) expBtn.disabled = false;
-
-      // Info
-      const box = new THREE.Box3().setFromObject(displayRoot);
+      setGlbDownloadState(blob, proj.modelName || 'model');
+      const entry = registerEditorModel(gltf.scene, {
+        name: proj.modelName || 'model',
+        kind: 'glb',
+        glbBlob: blob,
+      });
+      frameModel(entry.group);
+      const box = getModelsUnionBox();
       const s = box.getSize(new THREE.Vector3());
       const infoEl = document.getElementById('info');
       if (infoEl) {
