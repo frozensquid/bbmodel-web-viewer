@@ -117,6 +117,16 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   padding: 5px 8px; border-radius: 6px; background: #12121a; color: #ddd;
   border: 1px solid rgba(255,255,255,0.12); font-size: 12px; max-width: 180px; cursor: pointer;
 }
+#anim-bar .anim-loop-toggle {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06); color: #888; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  line-height: 1;
+}
+#anim-bar .anim-loop-toggle:hover { background: rgba(255,255,255,0.12); color: #ccc; }
+#anim-bar .anim-loop-toggle.active {
+  background: rgba(124,138,255,0.25); border-color: rgba(124,138,255,0.55); color: #c8d0ff;
+}
 #anim-bar .anim-play {
   width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18);
   background: rgba(255,255,255,0.06); color: #ddd; font-size: 14px; cursor: pointer;
@@ -555,6 +565,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 
 <div id="anim-bar">
   <select id="anim-select" data-i18n-title="anim.selectTitle" title="Choisir une animation"></select>
+  <button type="button" class="anim-loop-toggle" id="anim-force-loop" data-i18n-title="anim.forceLoopTitle" title="Forcer la lecture en boucle" aria-pressed="false">&#10227;</button>
   <button type="button" class="anim-play" id="anim-play" data-i18n-title="anim.playTitle" title="Lecture / Pause">&#9654;</button>
   <input type="range" class="anim-time" id="anim-time" min="0" max="1000" value="0" step="1">
   <span class="anim-label" id="anim-label">0.00 / 0.00</span>
@@ -645,6 +656,7 @@ const I18N_DATA = {
     'drop.subtitle': 'ou clique pour parcourir',
     'anim.none': '-- aucune --',
     'anim.selectTitle': 'Choisir une animation',
+    'anim.forceLoopTitle': 'Forcer la lecture en boucle (même si l\'animation est en mode « une fois »)',
     'anim.playTitle': 'Lecture / Pause',
     'loading.readingModel': 'Lecture du modèle…',
     'loading.convertingGlb': 'Conversion BBModel → GLB…',
@@ -762,6 +774,7 @@ const I18N_DATA = {
     'drop.subtitle': 'or click to browse',
     'anim.none': '-- none --',
     'anim.selectTitle': 'Choose an animation',
+    'anim.forceLoopTitle': 'Force looping playback (even if the animation is set to play once)',
     'anim.playTitle': 'Play / Pause',
     'loading.readingModel': 'Reading model…',
     'loading.convertingGlb': 'Converting BBModel → GLB…',
@@ -1277,9 +1290,10 @@ function sampleChannel(keyframes, time, animLoop, animLength) {
   ];
 }
 
-function applyAnimation(anim, time, nodeMap, baseTransforms) {
+function applyAnimation(anim, time, nodeMap, baseTransforms, loopModeForSample) {
   resetToBase(nodeMap, baseTransforms);
-  const loop = anim.loop, len = anim.length;
+  const loop = loopModeForSample !== undefined ? loopModeForSample : anim.loop;
+  const len = anim.length;
   for (const [uuid, track] of Object.entries(anim.tracks)) {
     const obj = nodeMap[uuid];
     if (!obj) continue;
@@ -1336,110 +1350,362 @@ function captureBaseTransforms(nodeMap) {
   return out;
 }
 
-let animList = [];
+let mergedAnimNames = [];
+let activeAnimName = null;
 let activeAnim = null;
 let animPlaying = false;
 let animTime = 0;
-let baseTransforms = {};
-let animNodeMap = {};
+let animForceLoop = false;
 let lastFrameTime = 0;
 
 const animSelect = document.getElementById('anim-select');
 const animPlayBtn = document.getElementById('anim-play');
+const animForceLoopBtn = document.getElementById('anim-force-loop');
 const animTimeSlider = document.getElementById('anim-time');
 const animLabel = document.getElementById('anim-label');
 const animBar = document.getElementById('anim-bar');
 
-function setupAnimations(data, nodeMap) {
-  animNodeMap = nodeMap;
-  baseTransforms = captureBaseTransforms(nodeMap);
-  animList = parseAnimations(data);
+function ensureParsedAnimsForEntry(entry) {
+  if (!entry?.bbmodelAnimData?.animations?.length) return;
+  if (!entry.parsedAnims) {
+    entry.parsedAnims = parseAnimations({ animations: entry.bbmodelAnimData.animations });
+  }
+  if (!entry.animNodeMap) {
+    entry.animNodeMap = buildNodeMapFromLoadedGltf(entry.root);
+  }
+  if (!entry.animBases) {
+    entry.animBases = captureBaseTransforms(entry.animNodeMap);
+  }
+}
 
-  animSelect.innerHTML = '';
-  if (animList.length === 0) {
-    animBar.classList.remove('visible');
+function findAnimByName(entry, name) {
+  if (!name || !entry.parsedAnims) return null;
+  return entry.parsedAnims.find(a => a.name === name) || null;
+}
+
+function ensureEntryAnimState(entry) {
+  if (!entry.animState) {
+    entry.animState = { name: null, time: 0, playing: false };
+  }
+  return entry.animState;
+}
+
+function getBoundEntry() {
+  if (selectedModelIdx < 0 || selectedModelIdx >= editorModels.length) return null;
+  return editorModels[selectedModelIdx];
+}
+
+function saveAnimUIBoundToCurrentEntry() {
+  if (selectedModelIdx < 0 || selectedModelIdx >= editorModels.length) return;
+  const st = ensureEntryAnimState(editorModels[selectedModelIdx]);
+  st.name = activeAnimName;
+  st.time = animTime;
+  st.playing = animPlaying;
+}
+
+function loadAnimUIFromCurrentEntry() {
+  if (selectedModelIdx < 0 || selectedModelIdx >= editorModels.length) {
+    activeAnimName = null;
     activeAnim = null;
+    animTime = 0;
     animPlaying = false;
     return;
   }
+  const st = ensureEntryAnimState(editorModels[selectedModelIdx]);
+  activeAnimName = st.name;
+  animTime = st.time;
+  animPlaying = st.playing;
+  activeAnim = activeAnimName ? findAnimByName(editorModels[selectedModelIdx], activeAnimName) : null;
+}
 
+function setAnimBarInteractionDisabled(disabled) {
+  if (animSelect) animSelect.disabled = disabled;
+  if (animPlayBtn) animPlayBtn.disabled = disabled;
+  if (animTimeSlider) animTimeSlider.disabled = disabled;
+  if (animForceLoopBtn) animForceLoopBtn.disabled = disabled;
+}
+
+function getMergedAnimNames() {
+  const seen = new Set();
+  const names = [];
+  for (const e of editorModels) {
+    ensureParsedAnimsForEntry(e);
+    if (!e.parsedAnims) continue;
+    for (const a of e.parsedAnims) {
+      if (!seen.has(a.name)) {
+        seen.add(a.name);
+        names.push(a.name);
+      }
+    }
+  }
+  return names;
+}
+
+function getMergedAnimNamesForEntry(entry) {
+  if (!entry) return [];
+  ensureParsedAnimsForEntry(entry);
+  if (!entry.parsedAnims) return [];
+  return entry.parsedAnims.map(a => a.name);
+}
+
+function sceneHasAnyAnimations() {
+  return getMergedAnimNames().length > 0;
+}
+
+function getMaxAnimLengthForEntry(entry, name) {
+  if (!entry || !name) return 0;
+  const a = findAnimByName(entry, name);
+  return a ? a.length : 0;
+}
+
+function resetAllModelsAnimToBase() {
+  for (const e of editorModels) {
+    if (e.animNodeMap && e.animBases) {
+      resetToBase(e.animNodeMap, e.animBases);
+    }
+  }
+}
+
+function applyAllModelAnimations() {
+  for (const e of editorModels) {
+    const st = ensureEntryAnimState(e);
+    if (!st.name || !e.animNodeMap || !e.animBases) {
+      if (e.animNodeMap && e.animBases) resetToBase(e.animNodeMap, e.animBases);
+      continue;
+    }
+    const anim = findAnimByName(e, st.name);
+    if (!anim) {
+      resetToBase(e.animNodeMap, e.animBases);
+      continue;
+    }
+    const effectiveLoop = animForceLoop || anim.loop === 'loop';
+    let tt = st.time;
+    if (effectiveLoop && anim.length > 0) {
+      tt = ((st.time % anim.length) + anim.length) % anim.length;
+    } else if (tt > anim.length) {
+      tt = anim.length;
+    }
+    const loopStr = effectiveLoop ? 'loop' : 'once';
+    applyAnimation(anim, tt, e.animNodeMap, e.animBases, loopStr);
+  }
+}
+
+function rebuildAnimationBarGlobal(opts = {}) {
+  const preservePlayback = opts.preservePlayback === true;
+  if (!preservePlayback) {
+    for (const e of editorModels) {
+      const st = ensureEntryAnimState(e);
+      st.name = null;
+      st.time = 0;
+      st.playing = false;
+    }
+    activeAnimName = null;
+    activeAnim = null;
+    animTime = 0;
+    animPlaying = false;
+  }
+
+  if (!sceneHasAnyAnimations()) {
+    mergedAnimNames = [];
+    activeAnimName = null;
+    activeAnim = null;
+    animPlaying = false;
+    animTime = 0;
+    if (animSelect) animSelect.innerHTML = '';
+    animBar.classList.remove('visible');
+    setAnimBarInteractionDisabled(false);
+    applyAllModelAnimations();
+    updateAnimUI();
+    return;
+  }
+
+  animBar.classList.add('visible');
+  const bound = getBoundEntry();
+  mergedAnimNames = bound ? getMergedAnimNamesForEntry(bound) : [];
+
+  animSelect.innerHTML = '';
   const noneOpt = document.createElement('option');
   noneOpt.value = '-1';
   noneOpt.textContent = t('anim.none');
   animSelect.appendChild(noneOpt);
-
-  animList.forEach((a, i) => {
+  mergedAnimNames.forEach((name, i) => {
     const opt = document.createElement('option');
     opt.value = String(i);
-    opt.textContent = a.name + (a.loop === 'loop' ? ' \u21BB' : '');
+    let loopHint = '';
+    const a = bound ? findAnimByName(bound, name) : null;
+    if (a && a.loop === 'loop') loopHint = ' \u21BB';
+    opt.textContent = name + loopHint;
     animSelect.appendChild(opt);
   });
 
-  animBar.classList.add('visible');
-  selectAnimation(-1);
+  let newIdx = -1;
+  if (bound && mergedAnimNames.length) {
+    const st = ensureEntryAnimState(bound);
+    if (st.name && mergedAnimNames.includes(st.name)) {
+      newIdx = mergedAnimNames.indexOf(st.name);
+    } else if (st.name) {
+      st.name = null;
+      st.time = 0;
+      st.playing = false;
+    }
+  } else if (bound && mergedAnimNames.length === 0) {
+    const st = ensureEntryAnimState(bound);
+    if (st.name) {
+      st.name = null;
+      st.time = 0;
+      st.playing = false;
+    }
+  }
+
+  animSelect.value = String(newIdx);
+  if (bound && mergedAnimNames.length && newIdx >= 0) {
+    const st = ensureEntryAnimState(bound);
+    activeAnimName = mergedAnimNames[newIdx];
+    st.name = activeAnimName;
+    animTime = st.time;
+    animPlaying = st.playing;
+    activeAnim = findAnimByName(bound, activeAnimName);
+  } else {
+    activeAnimName = null;
+    activeAnim = null;
+    animTime = 0;
+    animPlaying = false;
+  }
+
+  const noControls = !bound || mergedAnimNames.length === 0;
+  setAnimBarInteractionDisabled(noControls);
+  applyAllModelAnimations();
+  updateAnimUI();
 }
 
 function selectAnimation(idx) {
-  if (idx < 0 || idx >= animList.length) {
+  const bound = getBoundEntry();
+  if (!bound) return;
+  const st = ensureEntryAnimState(bound);
+  if (idx < 0 || idx >= mergedAnimNames.length) {
+    st.name = null;
+    st.time = 0;
+    st.playing = false;
+    activeAnimName = null;
     activeAnim = null;
     animPlaying = false;
     animTime = 0;
-    resetToBase(animNodeMap, baseTransforms);
+    applyAllModelAnimations();
     updateAnimUI();
     return;
   }
-  activeAnim = animList[idx];
+  st.name = mergedAnimNames[idx];
+  activeAnimName = st.name;
+  activeAnim = findAnimByName(bound, activeAnimName);
+  st.time = 0;
+  st.playing = true;
   animTime = 0;
   animPlaying = true;
   lastFrameTime = performance.now();
+  applyAllModelAnimations();
   updateAnimUI();
 }
 
 function updateAnimUI() {
-  const len = activeAnim ? activeAnim.length : 0;
-  animTimeSlider.max = String(Math.round(len * 1000));
+  const bound = getBoundEntry();
+  const maxLen = getMaxAnimLengthForEntry(bound, activeAnimName) || 0;
+  animTimeSlider.max = String(Math.max(1, Math.round(maxLen * 1000)));
   animTimeSlider.value = String(Math.round(animTime * 1000));
   const cur = animTime.toFixed(2);
-  const total = len.toFixed(2);
+  const total = maxLen.toFixed(2);
   animLabel.textContent = `${cur} / ${total}`;
   animPlayBtn.textContent = animPlaying ? '\u275A\u275A' : '\u25B6';
+  if (animForceLoopBtn) {
+    animForceLoopBtn.classList.toggle('active', animForceLoop);
+    animForceLoopBtn.setAttribute('aria-pressed', animForceLoop ? 'true' : 'false');
+  }
 }
 
 function tickAnimation() {
-  if (!activeAnim || !animPlaying) return;
-  const now = performance.now();
-  const dt = (now - lastFrameTime) / 1000;
-  lastFrameTime = now;
-  animTime += dt;
-  if (animTime >= activeAnim.length) {
-    if (activeAnim.loop === 'loop') {
-      animTime = animTime % activeAnim.length;
-    } else {
-      animTime = activeAnim.length;
-      animPlaying = false;
+  let anyPlaying = false;
+  for (const e of editorModels) {
+    const st = ensureEntryAnimState(e);
+    if (st.name && st.playing) {
+      const anim = findAnimByName(e, st.name);
+      if (anim && anim.length > 0) {
+        anyPlaying = true;
+        break;
+      }
     }
   }
-  applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
+  const now = performance.now();
+  if (anyPlaying) {
+    const dt = (now - lastFrameTime) / 1000;
+    lastFrameTime = now;
+    for (const e of editorModels) {
+      const st = ensureEntryAnimState(e);
+      if (!st.name || !st.playing) continue;
+      const anim = findAnimByName(e, st.name);
+      if (!anim || anim.length <= 0) continue;
+      st.time += dt;
+      const shouldLoop = animForceLoop || anim.loop === 'loop';
+      if (st.time >= anim.length) {
+        if (shouldLoop) st.time = anim.length > 0 ? st.time % anim.length : 0;
+        else {
+          st.time = anim.length;
+          st.playing = false;
+        }
+      }
+    }
+  } else {
+    lastFrameTime = now;
+  }
+  applyAllModelAnimations();
+  const bound = getBoundEntry();
+  if (bound) {
+    const st = ensureEntryAnimState(bound);
+    activeAnimName = st.name;
+    animTime = st.time;
+    animPlaying = st.playing;
+    activeAnim = activeAnimName ? findAnimByName(bound, activeAnimName) : null;
+  }
   updateAnimUI();
 }
 
 animSelect.addEventListener('change', () => {
-  selectAnimation(parseInt(animSelect.value, 10));
+  const v = parseInt(animSelect.value, 10);
+  if (v < 0) selectAnimation(-1);
+  else selectAnimation(v);
 });
 
 animPlayBtn.addEventListener('click', () => {
-  if (!activeAnim) return;
-  if (!animPlaying && animTime >= activeAnim.length) animTime = 0;
-  animPlaying = !animPlaying;
-  if (animPlaying) lastFrameTime = performance.now();
+  const bound = getBoundEntry();
+  if (!bound || !activeAnimName) return;
+  const st = ensureEntryAnimState(bound);
+  const anim = findAnimByName(bound, activeAnimName);
+  const maxLen = anim ? anim.length : 0;
+  if (!st.playing && animTime >= maxLen) {
+    animTime = 0;
+    st.time = 0;
+  }
+  st.playing = !st.playing;
+  animPlaying = st.playing;
+  if (st.playing) lastFrameTime = performance.now();
   updateAnimUI();
 });
 
+if (animForceLoopBtn) {
+  animForceLoopBtn.addEventListener('click', () => {
+    animForceLoop = !animForceLoop;
+    applyAllModelAnimations();
+    updateAnimUI();
+  });
+}
+
 animTimeSlider.addEventListener('input', () => {
-  if (!activeAnim) return;
+  const bound = getBoundEntry();
+  if (!bound || !activeAnimName) return;
+  const st = ensureEntryAnimState(bound);
   animTime = parseInt(animTimeSlider.value, 10) / 1000;
+  st.time = animTime;
+  st.playing = false;
   animPlaying = false;
-  applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
+  applyAllModelAnimations();
   updateAnimUI();
 });
 
@@ -1574,7 +1840,6 @@ function setGridVisible(on) {
 }
 
 const editorModels = [];
-let animModelEntry = null;
 let selectedModelIdx = -1;
 let modelGizmoMode = 'translate';
 
@@ -1597,15 +1862,22 @@ function syncExportProjectButton() {
 }
 
 function clearAnimationState() {
-  animList = [];
+  mergedAnimNames = [];
+  for (const e of editorModels) {
+    if (e.animState) {
+      e.animState.name = null;
+      e.animState.time = 0;
+      e.animState.playing = false;
+    }
+  }
+  activeAnimName = null;
   activeAnim = null;
   animPlaying = false;
-  animNodeMap = {};
-  baseTransforms = {};
-  animModelEntry = null;
   animTime = 0;
   if (animSelect) animSelect.innerHTML = '';
   if (animBar) animBar.classList.remove('visible');
+  setAnimBarInteractionDisabled(false);
+  applyAllModelAnimations();
   updateAnimUI();
 }
 
@@ -1640,6 +1912,8 @@ function registerEditorModel(displayRoot, opts) {
     glbBlob: opts.glbBlob || null,
     elCount: opts.elCount ?? null,
     bbmodelAnimData: opts.bbmodelAnimData ?? null,
+    animNodeMap: opts.animNodeMap ?? null,
+    animState: { name: null, time: 0, playing: false },
   };
   editorModels.push(entry);
   editorModels.forEach((e, i) => { e.group.userData.modelIdx = i; });
@@ -1942,11 +2216,10 @@ const lightRaycaster = new THREE.Raycaster();
 const lightMouse = new THREE.Vector2();
 
 function onViewerPointerDown(e) {
+  if (tfControls.dragging) return;
   const lpOpen = lightPanel.classList.contains('open');
   const ipOpen = imagePanel && imagePanel.classList.contains('open');
-  const mpOpen = modelPanel && modelPanel.classList.contains('open');
-  if (!lpOpen && !ipOpen && !mpOpen) return;
-  if (tfControls.dragging) return;
+  if (!lpOpen && !ipOpen && !modelPanel.classList.contains('open') && editorModels.length === 0) return;
   const rect = container.getBoundingClientRect();
   lightMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   lightMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1966,10 +2239,10 @@ function onViewerPointerDown(e) {
     const hits = lightRaycaster.intersectObjects(meshes);
     if (hits.length > 0) {
       const idx = hits[0].object.userData.imageIdx;
-      if (idx !== undefined) selectImage(idx);
+      if (idx !== undefined) { selectImage(idx); return; }
     }
   }
-  if (mpOpen && editorModels.length > 0) {
+  if (editorModels.length > 0) {
     const roots = editorModels.map(m => m.group);
     const hits = lightRaycaster.intersectObjects(roots, true);
     if (hits.length > 0) {
@@ -2178,7 +2451,6 @@ function removeEditorModel(idx) {
   } else if (selectedModelIdx > idx) {
     selectedModelIdx--;
   }
-  if (animModelEntry === entry) clearAnimationState();
   scene.remove(entry.group);
   disposeObject3D(entry.group);
   editorModels.splice(idx, 1);
@@ -2193,25 +2465,33 @@ function removeEditorModel(idx) {
     const gifBtn = document.getElementById('btn-gif');
     if (gifBtn) gifBtn.disabled = true;
     lastGlbBlob = null;
+    clearAnimationState();
+  } else {
+    rebuildAnimationBarGlobal({ preservePlayback: true });
   }
 }
 
 function selectModel(idx) {
   if (idx < 0 || idx >= editorModels.length) return;
   if (selectedModelIdx === idx) return;
+  saveAnimUIBoundToCurrentEntry();
   deselectLight();
   deselectImage();
   deselectExportCam();
   selectedModelIdx = idx;
+  loadAnimUIFromCurrentEntry();
   tfControls.setMode(modelGizmoMode);
   tfControls.attach(editorModels[idx].group);
+  rebuildAnimationBarGlobal({ preservePlayback: true });
   rebuildModelPanel();
 }
 
 function deselectModel() {
   if (selectedModelIdx === -1) return;
+  saveAnimUIBoundToCurrentEntry();
   selectedModelIdx = -1;
   if (tfControls.object && tfControls.object.userData && tfControls.object.userData.isEditorModel) tfControls.detach();
+  rebuildAnimationBarGlobal({ preservePlayback: true });
   rebuildModelPanel();
 }
 
@@ -2550,32 +2830,66 @@ function updateGifModalHints() {
   }
 }
 
-function gifAnimTimeAtFrame(anim, frameIndex, delaySec) {
-  const t = frameIndex * delaySec;
-  if (!anim) return 0;
-  if (anim.loop === 'loop') return anim.length > 0 ? t % anim.length : 0;
-  return Math.min(t, anim.length);
+function cloneAnimStatesSnapshot() {
+  return editorModels.map(e => {
+    const st = ensureEntryAnimState(e);
+    return { name: st.name, time: st.time, playing: st.playing };
+  });
 }
 
-function restoreViewerAfterGif(restoreSel, restoreTime, restorePlaying) {
-  const idx = parseInt(restoreSel, 10);
-  if (idx >= 0 && idx < animList.length) {
-    activeAnim = animList[idx];
-    animTime = restoreTime;
-    animPlaying = restorePlaying;
-    applyAnimation(activeAnim, animTime, animNodeMap, baseTransforms);
-    if (animPlaying) lastFrameTime = performance.now();
-  } else {
-    activeAnim = null;
-    animPlaying = false;
-    animTime = 0;
-    resetToBase(animNodeMap, baseTransforms);
+function restoreAnimStatesFromSnapshot(snap) {
+  editorModels.forEach((e, i) => {
+    const data = snap[i];
+    if (!data) return;
+    const st = ensureEntryAnimState(e);
+    st.name = data.name;
+    st.time = data.time;
+    st.playing = data.playing;
+  });
+}
+
+function applyExportFrameAtIndex(frameIndex, delaySec, forceLoop) {
+  for (const e of editorModels) {
+    const st = ensureEntryAnimState(e);
+    if (!st.name || !e.animNodeMap || !e.animBases) {
+      if (e.animNodeMap && e.animBases) resetToBase(e.animNodeMap, e.animBases);
+      continue;
+    }
+    const anim = findAnimByName(e, st.name);
+    if (!anim) {
+      resetToBase(e.animNodeMap, e.animBases);
+      continue;
+    }
+    const maxLen = anim.length || 0;
+    const t = frameIndex * delaySec;
+    const shouldLoop = forceLoop || anim.loop === 'loop';
+    let at = t;
+    if (shouldLoop && maxLen > 0) at = t % maxLen;
+    else at = Math.min(t, maxLen);
+    const loopStr = shouldLoop ? 'loop' : 'once';
+    applyAnimation(anim, at, e.animNodeMap, e.animBases, loopStr);
   }
+}
+
+function restoreViewerAfterGif(statesSnap, restoreForceLoop) {
+  restoreAnimStatesFromSnapshot(statesSnap);
+  animForceLoop = restoreForceLoop;
+  rebuildAnimationBarGlobal({ preservePlayback: true });
+  let anyPlaying = false;
+  for (const e of editorModels) {
+    if (ensureEntryAnimState(e).playing) {
+      anyPlaying = true;
+      break;
+    }
+  }
+  if (anyPlaying) lastFrameTime = performance.now();
   updateAnimUI();
 }
 
 async function exportViewerGif() {
   if (!hasAnyModel()) return;
+
+  saveAnimUIBoundToCurrentEntry();
 
   let numFrames = parseInt(document.getElementById('gif-frames').value, 10);
   let delayMs = parseInt(document.getElementById('gif-delay').value, 10);
@@ -2585,10 +2899,8 @@ async function exportViewerGif() {
   maxW = Math.max(240, Math.min(800, maxW));
 
   const useTurntable = !gifCameraMode || gifCameraMode.value === 'turntable';
-  const exportAnim = activeAnim;
-  const restoreSel = animSelect ? animSelect.value : '-1';
-  const restoreTime = animTime;
-  const restorePlaying = animPlaying;
+  const statesSnap = cloneAnimStatesSnapshot();
+  const restoreForceLoop = animForceLoop;
 
   gifModal.classList.remove('open');
   gifModal.setAttribute('aria-hidden', 'true');
@@ -2623,6 +2935,7 @@ async function exportViewerGif() {
   const expCamRotSaved = useExpCam ? exportCam.rotation.clone() : null;
 
   try {
+    animForceLoop = restoreForceLoop;
     const { GIFEncoder, quantize, applyPalette } = await import(
       'https://unpkg.com/gifenc@1.0.3/dist/gifenc.esm.js'
     );
@@ -2646,11 +2959,10 @@ async function exportViewerGif() {
     for (let i = 0; i < numFrames; i++) {
       loadingMsg.textContent = t('loading.capture', i + 1, numFrames);
 
-      if (exportAnim) {
-        const at = gifAnimTimeAtFrame(exportAnim, i, delaySec);
-        applyAnimation(exportAnim, at, animNodeMap, baseTransforms);
+      if (editorModels.some(e => ensureEntryAnimState(e).name)) {
+        applyExportFrameAtIndex(i, delaySec, restoreForceLoop);
       } else {
-        resetToBase(animNodeMap, baseTransforms);
+        resetAllModelsAnimToBase();
       }
 
       if (useTurntable) {
@@ -2696,7 +3008,9 @@ async function exportViewerGif() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     const modePart = useTurntable ? 'turntable' : 'fixe';
-    const animPart = exportAnim ? String(exportAnim.name || 'anim').replace(/[^\w\-]+/g, '_') : 'pose';
+    const expBound = getBoundEntry();
+    const expName = expBound ? ensureEntryAnimState(expBound).name : null;
+    const animPart = expName ? String(expName).replace(/[^\w\-]+/g, '_') : 'pose';
     a.download = `${safeName}_${modePart}_${animPart}.gif`;
     a.click();
     URL.revokeObjectURL(a.href);
@@ -2727,7 +3041,8 @@ async function exportViewerGif() {
     }
 
     renderer.render(scene, camera);
-    restoreViewerAfterGif(restoreSel, restoreTime, restorePlaying);
+    animForceLoop = restoreForceLoop;
+    restoreViewerAfterGif(statesSnap, restoreForceLoop);
     loadingMsg.textContent = '';
     loadingEl.classList.remove('active');
   }
@@ -2892,6 +3207,7 @@ async function handleFile(file) {
     }
 
     const elCount = (data.elements || []).filter(e => e.type === 'cube').length;
+    const anyPriorAnim = editorModels.some(e => ensureEntryAnimState(e).name);
     const entry = registerEditorModel(displayRoot, {
       name: stem,
       kind: 'bbmodel',
@@ -2899,14 +3215,15 @@ async function handleFile(file) {
       elCount,
     });
 
-    if (!animModelEntry) {
-      setupAnimations(data, nodeMapForAnim);
-      animModelEntry = entry;
-    }
-
     entry.bbmodelAnimData = (data.animations && data.animations.length > 0)
       ? { animations: JSON.parse(JSON.stringify(data.animations)) }
       : null;
+    entry.animNodeMap = nodeMapForAnim;
+
+    rebuildAnimationBarGlobal({ preservePlayback: anyPriorAnim });
+    if (wasEmpty && sceneHasAnyAnimations() && editorModels.length === 1) {
+      selectModel(0);
+    }
 
     if (wasEmpty) {
       frameModel(entry.group);
@@ -3195,16 +3512,14 @@ async function importProject(file) {
         if (m.animations && m.animations.length > 0) {
           entry.bbmodelAnimData = { animations: m.animations };
         }
+        entry.animNodeMap = buildNodeMapFromLoadedGltf(entry.root);
       }
-      for (const entry of editorModels) {
-        if (entry.bbmodelAnimData?.animations?.length > 0) {
-          const nodeMap = buildNodeMapFromLoadedGltf(entry.root);
-          setupAnimations({ animations: entry.bbmodelAnimData.animations }, nodeMap);
-          animModelEntry = entry;
-          break;
-        }
+      rebuildAnimationBarGlobal({ preservePlayback: false });
+      if (sceneHasAnyAnimations() && editorModels.length > 0) {
+        selectModel(0);
+      } else {
+        rebuildModelPanel();
       }
-      rebuildModelPanel();
       if (editorModels[0]) {
         setGlbDownloadState(editorModels[0].glbBlob, editorModels[0].name);
         frameModel(editorModels[0].group);
