@@ -101,7 +101,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 #gif-modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
 #gif-modal .hint { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.45; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.glb-meta { font-size: 11px; color: #666; }
 #loading-inner { text-align: center; }
 #loading-msg { margin-top: 14px; font-size: 13px; color: #aaa; }
 
@@ -359,10 +358,8 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   <span class="sep"></span>
   <button type="button" class="btn" id="btn-gif" disabled data-i18n-title="toolbar.gifTitle" title="Exporter un GIF (turntable ou vue fixe, avec animation)">GIF</button>
   <span class="sep"></span>
-  <button type="button" class="btn" id="btn-download-glb" disabled data-i18n="toolbar.downloadGlb" data-i18n-title="toolbar.downloadGlbTitle" title="Disponible après chargement d'un modèle">Télécharger .glb</button>
-  <span class="glb-meta" id="glb-meta"></span>
-  <span class="sep"></span>
-  <label class="btn" id="btn-open"><span data-i18n="toolbar.openBbmodel">Ouvrir .bbmodel</span><input type="file" accept=".bbmodel" hidden></label>
+  <button type="button" class="btn" id="btn-export-proj" disabled data-i18n="toolbar.exportProject" data-i18n-title="toolbar.exportProjectTitle" title="Exporter le projet">Exporter projet</button>
+  <button type="button" class="btn" id="btn-import-proj" data-i18n="toolbar.importProject" data-i18n-title="toolbar.importProjectTitle" title="Importer un projet">Importer projet</button>
   <span class="sep"></span>
   <select id="lang-select" title="Language">
     <option value="fr">FR</option>
@@ -482,7 +479,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 <div id="dropzone">
   <div class="drop-area" id="drop-area">
     <div class="icon">&#128230;</div>
-    <h2 data-i18n="drop.title">Glisse un .bbmodel ici</h2>
+    <h2 data-i18n="drop.title">Glisse un .bbmodel ou .bbmv ici</h2>
     <p data-i18n="drop.subtitle">ou clique pour parcourir</p>
   </div>
 </div>
@@ -537,9 +534,10 @@ const I18N_DATA = {
     'toolbar.speed': 'Vitesse',
     'toolbar.gif': 'GIF',
     'toolbar.gifTitle': 'Exporter un GIF (turntable ou vue fixe, avec animation)',
-    'toolbar.downloadGlb': 'Télécharger .glb',
-    'toolbar.downloadGlbTitle': 'Disponible après chargement d\'un modèle',
-    'toolbar.openBbmodel': 'Ouvrir .bbmodel',
+    'toolbar.exportProject': 'Exporter projet',
+    'toolbar.exportProjectTitle': 'Exporter la configuration complète du projet (.bbmv)',
+    'toolbar.importProject': 'Importer projet',
+    'toolbar.importProjectTitle': 'Importer un projet sauvegardé (.bbmv)',
     'preset.darkBlue': 'Bleu nuit',
     'preset.black': 'Noir',
     'preset.brown': 'Brun',
@@ -567,7 +565,12 @@ const I18N_DATA = {
     'gif.hint': 'Turntable : la caméra fait un tour de 360° sur le nombre d\'images indiqué. Vue fixe : la caméra reste à la position actuelle. Si une animation est sélectionnée en bas de page, elle est rejouée depuis le début sur chaque image (la pause entre images définit la vitesse). Connexion Internet requise pour l\'encodeur GIF.',
     'gif.cancel': 'Annuler',
     'gif.export': 'Exporter',
-    'drop.title': 'Glisse un .bbmodel ici',
+    'toolbar.exportProject': 'Exporter projet',
+    'toolbar.exportProjectTitle': 'Exporter la configuration complète du projet (.bbmv)',
+    'toolbar.importProject': 'Importer projet',
+    'toolbar.importProjectTitle': 'Importer un projet sauvegardé (.bbmv)',
+    'drop.title': 'Glisse un .bbmodel ou .bbmv ici',
+    'loading.importingProject': 'Importation du projet\u2026',
     'drop.subtitle': 'ou clique pour parcourir',
     'anim.none': '-- aucune --',
     'anim.selectTitle': 'Choisir une animation',
@@ -636,9 +639,10 @@ const I18N_DATA = {
     'toolbar.speed': 'Speed',
     'toolbar.gif': 'GIF',
     'toolbar.gifTitle': 'Export a GIF (turntable or fixed view, with animation)',
-    'toolbar.downloadGlb': 'Download .glb',
-    'toolbar.downloadGlbTitle': 'Available after loading a model',
-    'toolbar.openBbmodel': 'Open .bbmodel',
+    'toolbar.exportProject': 'Export project',
+    'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
+    'toolbar.importProject': 'Import project',
+    'toolbar.importProjectTitle': 'Import a saved project (.bbmv)',
     'preset.darkBlue': 'Dark blue',
     'preset.black': 'Black',
     'preset.brown': 'Brown',
@@ -666,7 +670,12 @@ const I18N_DATA = {
     'gif.hint': 'Turntable: the camera orbits 360° over the specified number of frames. Fixed view: the camera stays at its current position. If an animation is selected at the bottom, it replays from the start on each frame (the delay between frames controls speed). Internet connection required for the GIF encoder.',
     'gif.cancel': 'Cancel',
     'gif.export': 'Export',
-    'drop.title': 'Drop a .bbmodel here',
+    'toolbar.exportProject': 'Export project',
+    'toolbar.exportProjectTitle': 'Export the full project configuration (.bbmv)',
+    'toolbar.importProject': 'Import project',
+    'toolbar.importProjectTitle': 'Import a saved project (.bbmv)',
+    'drop.title': 'Drop a .bbmodel or .bbmv here',
+    'loading.importingProject': 'Importing project\u2026',
     'drop.subtitle': 'or click to browse',
     'anim.none': '-- none --',
     'anim.selectTitle': 'Choose an animation',
@@ -763,10 +772,6 @@ function applyI18nToDom() {
 }
 
 function refreshDynamicTexts() {
-  if (lastGlbBlob) {
-    const meta = document.getElementById('glb-meta');
-    if (meta) meta.textContent = t('glb.generated', (lastGlbBlob.size / 1024).toFixed(1));
-  }
   if (currentModel) {
     const infoEl = document.getElementById('info');
     if (infoEl && infoEl.textContent) {
@@ -1074,14 +1079,8 @@ let lastGlbFileStem = 'model';
 function setGlbDownloadState(blob, stem) {
   lastGlbBlob = blob;
   lastGlbFileStem = stem || 'model';
-  const btn = document.getElementById('btn-download-glb');
-  const meta = document.getElementById('glb-meta');
-  if (btn) btn.disabled = !blob;
-  if (meta) {
-    meta.textContent = blob
-      ? t('glb.generated', (blob.size / 1024).toFixed(1))
-      : '';
-  }
+  const expBtn = document.getElementById('btn-export-proj');
+  if (expBtn) expBtn.disabled = !blob;
 }
 
 // ─── Animation engine ───
@@ -2593,6 +2592,8 @@ async function handleFile(file) {
 
     const gifBtn = document.getElementById('btn-gif');
     if (gifBtn) gifBtn.disabled = false;
+    const expProjBtn = document.getElementById('btn-export-proj');
+    if (expProjBtn) expProjBtn.disabled = false;
 
     setupAnimations(data, nodeMapForAnim);
 
@@ -2629,14 +2630,6 @@ async function handleFile(file) {
   }
 }
 
-document.getElementById('btn-download-glb')?.addEventListener('click', () => {
-  if (!lastGlbBlob) return;
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(lastGlbBlob);
-  a.download = `${lastGlbFileStem}.glb`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-});
 
 // ─── UI: drag & drop + file input ───
 const dropzone = document.getElementById('dropzone');
@@ -2644,15 +2637,11 @@ const dropArea = document.getElementById('drop-area');
 
 dropArea.addEventListener('click', () => {
   const input = document.createElement('input');
-  input.type = 'file'; input.accept = '.bbmodel';
-  input.onchange = () => { if (input.files[0]) handleFile(input.files[0]); };
+  input.type = 'file'; input.accept = '.bbmodel,.bbmv';
+  input.onchange = () => { if (input.files[0]) handleDroppedFile(input.files[0]); };
   input.click();
 });
 
-document.getElementById('btn-open').querySelector('input').addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-  e.target.value = '';
-});
 
 document.body.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 document.body.addEventListener('dragleave', e => { if (e.target === document.body || e.target === dropzone) dropzone.classList.remove('drag-over'); });
@@ -2660,7 +2649,299 @@ document.body.addEventListener('drop', e => {
   e.preventDefault();
   dropzone.classList.remove('drag-over');
   const file = e.dataTransfer?.files[0];
-  if (file) handleFile(file);
+  if (file) handleDroppedFile(file);
+});
+
+// ─── Project Export/Import (.bbmv) ───
+
+function handleDroppedFile(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.bbmv')) return importProject(file);
+  if (name.endsWith('.bbmodel')) return handleFile(file);
+}
+
+function gatherProjectData() {
+  const proj = { version: 1 };
+
+  // Model GLB
+  if (lastGlbBlob) {
+    return lastGlbBlob.arrayBuffer().then(buf => {
+      proj.modelGlb = arrayBufferToBase64(buf);
+      proj.modelName = lastGlbFileStem;
+      return finishGatherProject(proj);
+    });
+  }
+  return Promise.resolve(finishGatherProject(proj));
+}
+
+function finishGatherProject(proj) {
+  // Background
+  const bgHex = '#' + scene.background.getHexString();
+  proj.background = bgHex;
+
+  // Ground
+  proj.groundColor = '#' + groundPlane.material.color.getHexString();
+  proj.groundVisible = groundPlane.visible;
+
+  // Grid
+  proj.gridVisible = grid.visible;
+
+  // Camera (editor)
+  proj.editorCamera = {
+    position: camera.position.toArray(),
+    target: controls.target.toArray(),
+    fov: camera.fov,
+  };
+
+  // Export camera
+  proj.exportCam = {
+    enabled: exportCamEnabled,
+    position: exportCam.position.toArray(),
+    rotation: [exportCam.rotation.x, exportCam.rotation.y, exportCam.rotation.z],
+    fov: exportCam.fov,
+  };
+
+  // Lights
+  proj.lights = userLights.map(e => ({
+    color: e.color,
+    intensity: e.intensity,
+    position: e.helper.position.toArray(),
+    castShadow: e.castShadow,
+  }));
+
+  // Images
+  proj.images = userImages.map(e => ({
+    dataUrl: e.dataUrl,
+    name: e.name,
+    opacity: e.opacity,
+    scale: e.scale,
+    position: e.mesh.position.toArray(),
+    rotation: [e.mesh.rotation.x, e.mesh.rotation.y, e.mesh.rotation.z],
+    meshScale: e.mesh.scale.toArray(),
+    shadowReceive: e.shadowReceive,
+  }));
+
+  // Language
+  proj.lang = currentLang;
+
+  // Turntable
+  proj.turntable = controls.autoRotate;
+  proj.turntableSpeed = controls.autoRotateSpeed;
+
+  return proj;
+}
+
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function exportProject() {
+  const proj = await gatherProjectData();
+  const json = JSON.stringify(proj);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (lastGlbFileStem || 'project') + '.bbmv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function importProject(file) {
+  loadingEl.classList.add('active');
+  loadingMsg.textContent = t('loading.importingProject');
+  document.getElementById('dropzone').classList.add('hidden');
+
+  try {
+    const text = await file.text();
+    const proj = JSON.parse(text);
+
+    // Clear existing state
+    while (userLights.length) removeUserLight(0);
+    while (userImages.length) removeUserImage(0);
+
+    // Language
+    if (proj.lang) {
+      currentLang = proj.lang;
+      const sel = document.getElementById('lang-select');
+      if (sel) sel.value = proj.lang;
+      await loadLang(proj.lang);
+    }
+
+    // Background
+    if (proj.background) applyViewerBackground(proj.background);
+
+    // Ground
+    if (proj.groundColor) applyGroundColor(proj.groundColor);
+    if (proj.groundVisible !== undefined) setGroundVisible(proj.groundVisible);
+
+    // Grid
+    if (proj.gridVisible !== undefined) setGridVisible(proj.gridVisible);
+
+    // Load model GLB
+    if (proj.modelGlb) {
+      loadingMsg.textContent = t('loading.loadingGlb');
+      const buf = base64ToArrayBuffer(proj.modelGlb);
+      const blob = new Blob([buf], { type: 'model/gltf-binary' });
+
+      if (currentModel) {
+        scene.remove(currentModel);
+        disposeObject3D(currentModel);
+        currentModel = null;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const loader = new GLTFLoader();
+      const gltf = await loader.loadAsync(url);
+      URL.revokeObjectURL(url);
+
+      const displayRoot = gltf.scene;
+      scene.add(displayRoot);
+      currentModel = displayRoot;
+
+      displayRoot.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+
+      lastGlbBlob = blob;
+      lastGlbFileStem = proj.modelName || 'model';
+
+      const nameEl = document.getElementById('model-name');
+      if (nameEl) {
+        nameEl.textContent = proj.modelName || 'model';
+        nameEl.removeAttribute('data-i18n');
+      }
+
+      frameModel(displayRoot);
+
+      const gifBtn = document.getElementById('btn-gif');
+      if (gifBtn) gifBtn.disabled = false;
+      const expBtn = document.getElementById('btn-export-proj');
+      if (expBtn) expBtn.disabled = false;
+
+      // Info
+      const box = new THREE.Box3().setFromObject(displayRoot);
+      const s = box.getSize(new THREE.Vector3());
+      const infoEl = document.getElementById('info');
+      if (infoEl) {
+        infoEl.textContent = t('info.display', '?', s.x.toFixed(2), s.y.toFixed(2), s.z.toFixed(2), t('info.modeGlb'));
+      }
+    }
+
+    // Lights
+    if (proj.lights && proj.lights.length) {
+      for (const lData of proj.lights) {
+        createUserLight({
+          color: lData.color,
+          intensity: lData.intensity,
+          position: lData.position,
+          castShadow: lData.castShadow,
+        });
+      }
+      deselectLight();
+    }
+
+    // Images
+    if (proj.images && proj.images.length) {
+      for (const iData of proj.images) {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const tex = new THREE.Texture(img);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.needsUpdate = true;
+            const aspect = img.width / img.height;
+            const baseH = 1;
+            const baseW = baseH * aspect;
+            const geo = new THREE.PlaneGeometry(baseW, baseH);
+            const mat = new THREE.MeshStandardMaterial({
+              map: tex, transparent: true, side: THREE.DoubleSide,
+              depthWrite: true, roughness: 1, metalness: 0,
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.fromArray(iData.position);
+            mesh.rotation.set(iData.rotation[0], iData.rotation[1], iData.rotation[2]);
+            if (iData.meshScale) mesh.scale.fromArray(iData.meshScale);
+            mesh.receiveShadow = iData.shadowReceive || false;
+            mesh.userData.isUserImage = true;
+            mesh.userData.imageIdx = userImages.length;
+            scene.add(mesh);
+            const entry = {
+              id: imageIdCounter++, mesh, texture: tex, dataUrl: iData.dataUrl,
+              name: iData.name, opacity: iData.opacity ?? 1, scale: iData.scale ?? 1,
+              baseWidth: baseW, baseHeight: baseH, shadowReceive: iData.shadowReceive || false,
+            };
+            if (iData.opacity !== undefined && iData.opacity < 1) {
+              mesh.material.opacity = iData.opacity;
+            }
+            userImages.push(entry);
+            resolve();
+          };
+          img.src = iData.dataUrl;
+        });
+      }
+      rebuildImagePanel();
+    }
+
+    // Export camera
+    if (proj.exportCam) {
+      exportCam.position.fromArray(proj.exportCam.position);
+      if (proj.exportCam.rotation) {
+        exportCam.rotation.set(proj.exportCam.rotation[0], proj.exportCam.rotation[1], proj.exportCam.rotation[2]);
+      }
+      if (proj.exportCam.fov) {
+        exportCam.fov = proj.exportCam.fov;
+        exportCam.updateProjectionMatrix();
+      }
+      setExportCamEnabled(proj.exportCam.enabled || false);
+    }
+
+    // Editor camera
+    if (proj.editorCamera) {
+      camera.position.fromArray(proj.editorCamera.position);
+      controls.target.fromArray(proj.editorCamera.target);
+      if (proj.editorCamera.fov) {
+        camera.fov = proj.editorCamera.fov;
+        camera.updateProjectionMatrix();
+      }
+      controls.update();
+    }
+
+    // Turntable
+    if (proj.turntable !== undefined) setTurntable(proj.turntable);
+    if (proj.turntableSpeed !== undefined) {
+      controls.autoRotateSpeed = proj.turntableSpeed;
+      const sInput = document.getElementById('turntable-speed');
+      if (sInput) sInput.value = String(proj.turntableSpeed);
+    }
+
+    refreshShadowSystem();
+    onViewerResize();
+
+  } catch (err) {
+    console.error(err);
+    alert(t('error.loading') + (err.message || err));
+    document.getElementById('dropzone').classList.remove('hidden');
+  } finally {
+    loadingEl.classList.remove('active');
+    loadingMsg.textContent = '';
+  }
+}
+
+document.getElementById('btn-export-proj')?.addEventListener('click', exportProject);
+document.getElementById('btn-import-proj')?.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.bbmv';
+  input.onchange = () => { if (input.files[0]) importProject(input.files[0]); };
+  input.click();
 });
 </script>
 </body>
