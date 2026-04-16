@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBMV - Landing Page</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(124,138,255,0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(124,138,255,0.10), transparent 24%),
+    linear-gradient(180deg, #111 0%, #0d0d12 100%);
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+
+.page-shell {
+  width: min(1180px, calc(100vw - 32px));
+  margin: 0 auto;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(12px);
+  background: rgba(20, 20, 30, 0.82);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 20px;
+  color: #dfe4ff;
+  letter-spacing: 1.4px;
+}
+.brand-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(124,138,255,0.95), rgba(88,105,255,0.92));
+  box-shadow: 0 10px 28px rgba(88,105,255,0.22);
+  color: #111;
+  font-size: 15px;
+}
+.top-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#lang-select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #d7d7dd;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#lang-select:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #d7d7dd;
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform 0.18s, background 0.18s, border-color 0.18s, color 0.18s;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.btn-primary {
+  background: rgba(124,138,255,0.22);
+  border-color: rgba(124,138,255,0.45);
+  color: #e6e9ff;
+  box-shadow: 0 14px 30px rgba(88,105,255,0.18);
+}
+.btn-primary:hover {
+  background: rgba(124,138,255,0.30);
+  border-color: rgba(124,138,255,0.68);
+}
+.btn-linklike {
+  cursor: pointer;
+}
+
+.hero {
+  padding: 72px 0 40px;
+}
+.hero-grid {
+  display: block;
+}
+.hero-copy, .section-card, .step-card, .final-card {
+  background: rgba(18,18,28,0.88);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.34);
+}
+.hero-copy {
+  padding: 36px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(124,138,255,0.12);
+  border: 1px solid rgba(124,138,255,0.24);
+  color: #c9d0ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+h1 {
+  margin-top: 18px;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.02;
+  letter-spacing: -1.6px;
+  color: #f2f3ff;
+}
+.hero-copy p {
+  margin-top: 18px;
+  max-width: 1000px;
+  color: #aeb0c2;
+  font-size: 17px;
+  line-height: 1.7;
+}
+.hero-actions {
+  margin-top: 26px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hero-cta {
+  min-width: 220px;
+  padding-inline: 28px;
+}
+.hero-points {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.mini-point {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #d7d9ea;
+  font-size: 14px;
+}
+.mini-point span {
+  display: block;
+  margin-top: 4px;
+  color: #8e92ab;
+  font-size: 12px;
+}
+
+
+.section {
+  padding: 18px 0 0;
+}
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.section-head h2 {
+  font-size: clamp(24px, 3vw, 34px);
+  color: #f0f2ff;
+  letter-spacing: -0.8px;
+}
+.section-head p {
+  max-width: 680px;
+  color: #9da1bb;
+  line-height: 1.65;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.section-card {
+  padding: 24px;
+}
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(124,138,255,0.15);
+  border: 1px solid rgba(124,138,255,0.25);
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+.section-card h3 {
+  color: #eceeff;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.section-card p {
+  color: #9ea2bb;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.section-card ul {
+  margin-top: 14px;
+  padding-left: 18px;
+  color: #d8dbef;
+}
+.section-card li {
+  margin-bottom: 8px;
+  line-height: 1.55;
+}
+
+.workflow {
+  padding-top: 18px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.step-card {
+  padding: 22px 20px;
+  position: relative;
+}
+.step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(124,138,255,0.18);
+  color: #dce1ff;
+  border: 1px solid rgba(124,138,255,0.3);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+.step-card h3 {
+  font-size: 17px;
+  color: #edf0ff;
+  margin-bottom: 10px;
+}
+.step-card p {
+  color: #9ca1ba;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.finale {
+  padding: 26px 0 72px;
+}
+.final-card {
+  padding: 34px;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 22px;
+  align-items: center;
+  background:
+    radial-gradient(circle at top right, rgba(124,138,255,0.16), transparent 35%),
+    rgba(18,18,28,0.94);
+}
+.final-card h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  color: #f2f3ff;
+  line-height: 1.08;
+  letter-spacing: -1px;
+}
+.final-card p {
+  margin-top: 14px;
+  color: #a8adc5;
+  line-height: 1.75;
+  font-size: 15px;
+}
+.final-list {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+.final-item {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #d9dcf0;
+  font-size: 14px;
+}
+.final-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.final-cta .hint {
+  color: #8f93ad;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.footer {
+  margin-top: 56px;
+  padding: 24px 0 40px;
+  color: #70758d;
+  font-size: 12px;
+}
+
+.launch-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.60);
+  backdrop-filter: blur(8px);
+}
+.launch-modal.open {
+  display: flex;
+}
+.launch-panel {
+  width: min(560px, 100%);
+  padding: 24px;
+  border-radius: 22px;
+  background: rgba(18,18,28,0.96);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.40);
+}
+.launch-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.launch-head h3 {
+  font-size: 24px;
+  color: #eef0ff;
+  letter-spacing: -0.5px;
+}
+.launch-head p {
+  margin-top: 8px;
+  color: #9da1bb;
+  line-height: 1.65;
+  font-size: 14px;
+}
+.launch-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #aeb3cb;
+  font-size: 20px;
+  cursor: pointer;
+}
+.launch-close:hover {
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+}
+.launch-form {
+  display: grid;
+  gap: 14px;
+}
+.field {
+  display: grid;
+  gap: 8px;
+}
+.field label {
+  color: #cfd3eb;
+  font-size: 13px;
+  font-weight: 600;
+}
+.field input[type="text"],
+.field input[type="file"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #12121a;
+  color: #e4e6f4;
+  font-size: 14px;
+}
+.field input[type="file"] {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.file-input-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.file-dropzone {
+  display: grid;
+  gap: 8px;
+  min-height: 140px;
+  padding: 22px 18px;
+  border-radius: 18px;
+  border: 2px dashed rgba(124,138,255,0.34);
+  background: rgba(124,138,255,0.05);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+.file-dropzone:hover,
+.file-dropzone.is-dragover {
+  border-color: #7c8aff;
+  background: rgba(124,138,255,0.10);
+  transform: translateY(-1px);
+}
+.file-dropzone-icon {
+  font-size: 32px;
+  line-height: 1;
+  opacity: 0.85;
+}
+.file-dropzone-title {
+  color: #e7eaff;
+  font-size: 15px;
+  font-weight: 700;
+}
+.file-dropzone-subtitle {
+  color: #9095b1;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.file-dropzone-name {
+  color: #cfd4f4;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 18px;
+}
+.field-hint {
+  color: #8489a3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.launch-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.launch-status {
+  min-height: 20px;
+  color: #f2b5b5;
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .final-card,
+  .grid-3,
+  .steps,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .hero-copy,
+  .final-card {
+    padding: 24px;
+  }
+  .hero-points {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell { width: min(100vw - 22px, 1180px); }
+  .topbar-inner { align-items: flex-start; flex-direction: column; }
+  .hero { padding-top: 34px; }
+  .section-card, .step-card { padding: 20px; }
+}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="page-shell topbar-inner">
+      <div class="brand">
+       
+        <span>BBMV</span>
+      </div>
+      <div class="top-links">
+        <a class="btn" href="#features" data-i18n="nav.features">Features</a>
+        <a class="btn" href="#workflow" data-i18n="nav.workflow">Workflow</a>
+        <button class="btn btn-primary btn-linklike" type="button" data-open-launch-modal data-i18n="nav.openEditor">Ouvrir l’éditeur</button>
+        <select id="lang-select" title="Language">
+          <option value="fr">FR</option>
+          <option value="en">EN</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow" data-i18n="hero.eyebrow">BBMV • Blockbench Scene Editor</div>
+          <h1 data-i18n="hero.title">Compose, anime et exporte tes scenes Blockbench dans une interface web elegante.</h1>
+          <p data-i18n-html="hero.body">
+            BBMV permet d’ouvrir des fichiers <code>.bbmodel</code>, <code>.glb</code> et <code>.bbmv</code>,
+            de construire une scene 3D complete, de jouer les animations, d’ajouter des images, du texte,
+            des lumieres, puis d’exporter le rendu en <code>PNG</code>, <code>GIF</code> ou en projet sauvegardable.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary hero-cta btn-linklike" type="button" data-open-launch-modal data-i18n="hero.cta">Lancer BBMV</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-head">
+        <div>
+          <h2 data-i18n="features.title">Les features principales</h2>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <article class="section-card">
+          <div class="icon">📦</div>
+          <h3 data-i18n="features.import.title">Importer plusieurs formats</h3>
+          <p data-i18n="features.import.body">
+            Ouvre directement des projets Blockbench, des modeles GLB et des projets BBMV complets pour reprendre une scene
+            exactement la ou tu l’avais laissee.
+          </p>
+          <ul>
+            <li data-i18n-html="features.import.li1"><code>.bbmodel</code> avec animations</li>
+            <li data-i18n-html="features.import.li2">Objet 3D <code>.glb</code></li>
+            <li data-i18n-html="features.import.li3"><code>.bbmv</code> pour restaurer tout le projet</li>
+          </ul>
+        </article>
+
+        <article class="section-card">
+          <div class="icon">🎞️</div>
+          <h3 data-i18n="features.anim.title">Jouer et piloter les animations</h3>
+          <p data-i18n="features.anim.body">
+            Quand un modele contient des animations Blockbench, une barre dediee apparait pour choisir l’animation,
+            controler la lecture et naviguer dans la timeline.
+          </p>
+          <ul>
+            <li data-i18n="features.anim.li1">lecture / pause</li>
+            <li data-i18n="features.anim.li2">curseur de temps</li>
+            <li data-i18n="features.anim.li3">boucle forcee si besoin</li>
+          </ul>
+        </article>
+
+        <article class="section-card">
+          <div class="icon">🛠️</div>
+          <h3 data-i18n="features.scene.title">Composer une scene complete</h3>
+          <p data-i18n="features.scene.body">
+            BBMV ne sert pas seulement a afficher un modele: tu peux construire une vraie mise en scene avec medias,
+            texte, lumieres et environnement.
+          </p>
+          <ul>
+            <li data-i18n="features.scene.li1">images placees en 3D</li>
+            <li data-i18n="features.scene.li2">texte personnalise dans la scene</li>
+            <li data-i18n="features.scene.li3">lumieres, ombres, fond, sol et grille</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid-2">
+        <article class="section-card">
+          <div class="icon">📸</div>
+          <h3 data-i18n="features.export.title">Exporter des rendus</h3>
+          <p data-i18n="features.export.body">
+            Une fenetre d’export permet de choisir le format, le nom du fichier, la largeur maximale et la camera utilisee.
+            Tu peux produire une image fixe en PNG ou une sequence animee en GIF.
+          </p>
+          <ul>
+            <li data-i18n-html="features.export.li1"><strong>PNG</strong> depuis la vue editeur ou la camera d’export</li>
+            <li data-i18n-html="features.export.li2"><strong>GIF</strong> en turntable ou vue fixe</li>
+            <li data-i18n="features.export.li3">prise en compte de l’animation active pendant la capture</li>
+          </ul>
+        </article>
+
+        <article class="section-card">
+          <div class="icon">🎥</div>
+          <h3 data-i18n="features.camera.title">Camera d’export et cadrage</h3>
+          <p data-i18n="features.camera.body">
+            La camera d’export te permet de verrouiller un angle propre pour les rendus sans dependre de la navigation courante
+            dans l’editeur.
+          </p>
+          <ul>
+            <li data-i18n="features.camera.li1">camera optionnelle dans la scene</li>
+            <li data-i18n="features.camera.li2">capture de la vue courante</li>
+            <li data-i18n="features.camera.li3">cadrage stable pour PNG et GIF</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section workflow" id="workflow">
+      <div class="section-head">
+        <div>
+          <h2 data-i18n="workflow.title">Workflow simple</h2>
+    
+        </div>
+      </div>
+
+      <div class="steps">
+        <article class="step-card">
+          <div class="step-num">01</div>
+          <h3 data-i18n="workflow.step1.title">Importer</h3>
+          <p data-i18n-html="workflow.step1.body">Charge un <code>.bbmodel</code>, un <code>.glb</code> ou un projet <code>.bbmv</code> via glisser-deposer ou depuis les panneaux.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-num">02</div>
+          <h3 data-i18n="workflow.step2.title">Composer</h3>
+          <p data-i18n="workflow.step2.body">Ajoute des images, du texte, des lumieres et ajuste l’environnement pour construire une scene lisible et propre.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-num">03</div>
+          <h3 data-i18n="workflow.step3.title">Animer</h3>
+          <p data-i18n="workflow.step3.body">Selectionne une animation, regle la timeline, teste la boucle et choisis le meilleur moment ou angle de capture.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-num">04</div>
+          <h3 data-i18n="workflow.step4.title">Exporter</h3>
+          <p data-i18n-html="workflow.step4.body">Genere un PNG, un GIF, ou sauvegarde la scene entiere dans un fichier <code>.bbmv</code> pour la reprendre plus tard.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="page-shell">
+        <span data-i18n="footer.text">BBMV • Landing page</span>
+      </div>
+    </footer>
+  </main>
+  <div class="launch-modal" id="launch-modal" aria-hidden="true">
+    <div class="launch-panel" role="dialog" aria-modal="true" aria-labelledby="launch-title">
+      <div class="launch-head">
+        <div>
+          <h3 id="launch-title" data-i18n="modal.title">Ouvrir dans l’éditeur</h3>
+          <p data-i18n-html="modal.body">Donne un nom à ton projet, choisis un modèle <code>.bbmodel</code> ou <code>.glb</code>, puis ouvre directement BBMV avec ce fichier.</p>
+        </div>
+        <button class="launch-close" id="launch-close" type="button" aria-label="Fermer" data-i18n-aria="modal.closeAria">×</button>
+      </div>
+      <form class="launch-form" id="launch-form">
+        <div class="field">
+          <label for="launch-project-name" data-i18n="modal.projectName">Nom du projet</label>
+          <input id="launch-project-name" name="projectName" type="text" maxlength="80" placeholder="Mon projet BBMV" required data-i18n-placeholder="modal.projectPlaceholder">
+        </div>
+        <div class="field">
+          <label for="launch-model-file" data-i18n="modal.model">Modèle</label>
+          <input class="file-input-native" id="launch-model-file" name="modelFile" type="file" accept=".bbmodel,.glb" required>
+          <label class="file-dropzone" id="launch-dropzone" for="launch-model-file">
+            <div class="file-dropzone-icon">📦</div>
+            <div class="file-dropzone-title" data-i18n="modal.dropTitle">Glisse ton modèle ici</div>
+            <div class="file-dropzone-subtitle" data-i18n-html="modal.dropSubtitle">ou clique pour choisir un fichier <code>.bbmodel</code> ou <code>.glb</code></div>
+            <div class="file-dropzone-name" id="launch-file-name" data-i18n="modal.noFile">Aucun fichier sélectionné</div>
+          </label>
+          <div class="field-hint" data-i18n-html="modal.fileHint">Formats acceptés : <code>.bbmodel</code> et <code>.glb</code>.</div>
+        </div>
+        <div class="launch-status" id="launch-status"></div>
+        <div class="launch-actions">
+          <button class="btn" id="launch-cancel" type="button" data-i18n="modal.cancel">Annuler</button>
+          <button class="btn btn-primary" id="launch-submit" type="submit" data-i18n="modal.submit">Ouvrir dans l’éditeur</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="lang/i18n-data.js"></script>
+  <script>
+    const LANG_STORAGE_KEY = 'bbviewer-lang';
+    const PENDING_EDITOR_LAUNCH_KEY = 'bbmv-pending-editor-launch';
+    const I18N_SUPPORTED_LANGS = ['fr', 'en'];
+    const I18N_DATA = window.BBMV_I18N || {};
+    let i18nStrings = {};
+    let currentLang = 'fr';
+
+    const launchModal = document.getElementById('launch-modal');
+    const launchForm = document.getElementById('launch-form');
+    const launchCloseBtn = document.getElementById('launch-close');
+    const launchCancelBtn = document.getElementById('launch-cancel');
+    const launchProjectNameInput = document.getElementById('launch-project-name');
+    const launchModelFileInput = document.getElementById('launch-model-file');
+    const launchDropzone = document.getElementById('launch-dropzone');
+    const launchFileName = document.getElementById('launch-file-name');
+    const launchStatus = document.getElementById('launch-status');
+    const launchSubmitBtn = document.getElementById('launch-submit');
+    const launchOpeners = Array.from(document.querySelectorAll('[data-open-launch-modal]'));
+    const langSelect = document.getElementById('lang-select');
+
+    function t(key) {
+      return i18nStrings[key] != null ? i18nStrings[key] : key;
+    }
+
+    function applyI18nToDom() {
+      document.documentElement.lang = currentLang;
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+        const key = el.getAttribute('data-i18n-html');
+        el.innerHTML = t(key);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        el.setAttribute('placeholder', t(key));
+      });
+      document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+        const key = el.getAttribute('data-i18n-aria');
+        el.setAttribute('aria-label', t(key));
+      });
+    }
+
+    function setLanguage(lang) {
+      const safeLang = I18N_SUPPORTED_LANGS.includes(lang) ? lang : 'fr';
+      const data = I18N_DATA[safeLang];
+      if (!data) { console.warn('i18n: unknown lang', safeLang); return; }
+      i18nStrings = data;
+      currentLang = safeLang;
+      if (langSelect) langSelect.value = currentLang;
+      try { localStorage.setItem(LANG_STORAGE_KEY, currentLang); } catch (_) {}
+      applyI18nToDom();
+      const file = launchModelFileInput.files && launchModelFileInput.files[0];
+      if (!file) launchFileName.textContent = t('modal.noFile');
+    }
+
+    function setLaunchStatus(message) {
+      if (launchStatus) launchStatus.textContent = message || '';
+    }
+
+    function openLaunchModal() {
+      launchModal.classList.add('open');
+      launchModal.setAttribute('aria-hidden', 'false');
+      setLaunchStatus('');
+      if (!launchProjectNameInput.value.trim()) launchProjectNameInput.value = t('modal.defaultProjectName');
+      setTimeout(() => launchProjectNameInput.focus(), 20);
+    }
+
+    function closeLaunchModal() {
+      launchModal.classList.remove('open');
+      launchModal.setAttribute('aria-hidden', 'true');
+      setLaunchStatus('');
+    }
+
+    function setSelectedLaunchFile(file) {
+      const dt = new DataTransfer();
+      if (file) dt.items.add(file);
+      launchModelFileInput.files = dt.files;
+      launchFileName.textContent = file ? file.name : 'Aucun fichier sélectionné';
+    }
+
+    async function readFilePayload(file) {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith('.bbmodel')) {
+        return {
+          kind: 'bbmodel',
+          fileName: file.name,
+          payload: await file.text(),
+        };
+      }
+      if (lower.endsWith('.glb')) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return {
+          kind: 'glb',
+          fileName: file.name,
+          payload: btoa(binary),
+        };
+      }
+      throw new Error(t('modal.errorUnsupported'));
+    }
+
+    async function handleLaunchSubmit(event) {
+      event.preventDefault();
+      const file = launchModelFileInput.files && launchModelFileInput.files[0];
+      const projectName = launchProjectNameInput.value.trim();
+
+      if (!projectName) {
+        setLaunchStatus(t('modal.errorMissingName'));
+        launchProjectNameInput.focus();
+        return;
+      }
+      if (!file) {
+        setLaunchStatus(t('modal.errorMissingFile'));
+        launchModelFileInput.focus();
+        return;
+      }
+
+      try {
+        launchSubmitBtn.disabled = true;
+        setLaunchStatus('');
+        const fileData = await readFilePayload(file);
+        sessionStorage.setItem(PENDING_EDITOR_LAUNCH_KEY, JSON.stringify({
+          projectName,
+          createdAt: Date.now(),
+          ...fileData,
+        }));
+        window.location.href = 'index.html';
+      } catch (err) {
+        setLaunchStatus(err && err.message ? err.message : t('modal.errorPrepare'));
+      } finally {
+        launchSubmitBtn.disabled = false;
+      }
+    }
+
+    launchOpeners.forEach((btn) => btn.addEventListener('click', openLaunchModal));
+    launchCloseBtn.addEventListener('click', closeLaunchModal);
+    launchCancelBtn.addEventListener('click', closeLaunchModal);
+    launchModal.addEventListener('click', (event) => {
+      if (event.target === launchModal) closeLaunchModal();
+    });
+    launchModelFileInput.addEventListener('change', () => {
+      const file = launchModelFileInput.files && launchModelFileInput.files[0];
+      launchFileName.textContent = file ? file.name : t('modal.noFile');
+    });
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      launchDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        launchDropzone.classList.add('is-dragover');
+      });
+    });
+    ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+      launchDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        launchDropzone.classList.remove('is-dragover');
+      });
+    });
+    launchDropzone.addEventListener('drop', (event) => {
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (!file) return;
+      if (!/\.(bbmodel|glb)$/i.test(file.name || '')) {
+        setLaunchStatus(t('modal.errorMissingFile'));
+        return;
+      }
+      setLaunchStatus('');
+      setSelectedLaunchFile(file);
+    });
+    langSelect?.addEventListener('change', () => { setLanguage(langSelect.value); });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && launchModal.classList.contains('open')) closeLaunchModal();
+    });
+    launchForm.addEventListener('submit', handleLaunchSubmit);
+    const savedLang = (() => { try { return localStorage.getItem(LANG_STORAGE_KEY); } catch (_) { return null; } })();
+    setLanguage(savedLang || 'fr');
+  </script>
+</body>
+</html>
