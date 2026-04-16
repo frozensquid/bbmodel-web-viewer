@@ -2,6 +2,7 @@
 
 **[Français](#fr)** · **[English](#en)**
 
+Showcase video : https://www.youtube.com/watch?v=kU7wvzEHDjI 
 ---
 
 <a id="fr"></a>
